@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: inlive
+    keycloak-url: ${KEYCLOAK_URL:http://localhost:8181}
+    realm: master
+    client-id: admin-cli
+    client-secret: ${KEYCLOAK_CLIENT_SECRET:Vjnf23OVm5NLGDEv6qcrLZ75r1lJsash}
+    username: ${KEYCLOAK_ADMIN:smilexah@inbox.ru}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:Meiirzhan05!}
+
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_ADDRESS:localhost}:${POSTGRES_ADDRESS_PORT:5434}/${POSTGRES_DB_NAME:inlive}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    generate-ddl: true
+    defer-datasource-initialization: true
+    show-sql: true
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER:${spring.application.keycloak-url}/realms/${spring.application.realm}}
+          jwk-set-uri: ${OAUTH2_JWK:${spring.security.oauth2.resourceserver.jwt.issuer-uri}/protocol/openid-connect/certs}
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    time-zone: UTC
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+server:
+  servlet:
+    context-path: '/api/'
+  error:
+    include-message: always
+  port: ${PORT:8080}
+  address: 0.0.0.0
