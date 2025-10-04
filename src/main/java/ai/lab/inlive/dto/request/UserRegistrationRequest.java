@@ -20,6 +20,6 @@ public record UserRegistrationRequest(
         String lastName,
 
         @NotBlank(message = "Role is required")
-        String role // CLIENT or SUPER_MANAGER
+        String role
 ) {
 }

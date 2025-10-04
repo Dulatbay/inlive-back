@@ -19,6 +19,8 @@ public interface KeycloakService {
 
     AuthResponse refreshToken(String refreshToken);
 
+    void logout(String accessToken, String refreshToken);
+
     void deleteUserById(String userId);
 
     List<UserRepresentation> getAllUsers();

@@ -13,6 +13,37 @@ services:
     ports:
       - "5434:5432"
     restart: unless-stopped
+
+  postgres-keycloak:
+    container_name: inlive-postgres-keycloak
+    image: postgres
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - keycloak_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  keycloak:
+    container_name: inlive-keycloak
+    image: quay.io/keycloak/keycloak:26.4.0
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+    ports:
+      - "8182:8080"
+    depends_on:
+      - postgres-keycloak
+    command: start-dev
+    restart: unless-stopped
+
 #  springapp:
 #    container_name: wonder-springapp
 #    build:
@@ -28,3 +59,6 @@ services:
 #      - "8181:8181"
 #    depends_on:
 #      - postgres
+
+volumes:
+  keycloak_postgres_data:
