@@ -3,6 +3,7 @@ package ai.lab.inlive.services.impl;
 import ai.lab.inlive.config.properties.KeycloakConfigProperties;
 import ai.lab.inlive.dto.request.UpdatePasswordRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
+import ai.lab.inlive.dto.response.KeycloakTokenResponse;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakError;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
@@ -13,7 +14,6 @@ import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpStatus;
 import org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.CreatedResponseUtil;
@@ -32,6 +32,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Collections;
@@ -42,12 +43,9 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class KeycloakServiceImpl implements KeycloakService {
-
     private final RestTemplate restTemplate;
     private final KeycloakConfigProperties keycloakConfigProperties;
-
     private final MessageSource messageSource;
-
 
     @Override
     public UserRepresentation createUserByRole(KeycloakBaseUser sellerRegistrationRequest, KeycloakRole keycloakRole) {
@@ -88,7 +86,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         if (response.getStatus() != 201) {
             log.info("response status: {}", response.getStatus());
             log.info("response entity: {}", response.getEntity());
-            if (response.getStatus() == HttpStatus.SC_CONFLICT) {
+            if (response.getStatus() == HttpStatus.CONFLICT.value()) {
                 var object = response.readEntity(KeycloakError.class);
                 throw new IllegalArgumentException(object.getErrorMessage());
             } else {
@@ -99,8 +97,8 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     private UserResource setupUserResource(KeycloakBaseUser keycloakBaseUser, KeycloakRole keycloakRole, String userId) {
         UserResource userResource = getUsersResource().get(userId);
-        userResource.resetPassword(getPasswordCredential(keycloakBaseUser.getPassword(), false));
-        userResource.roles() //
+        userResource.resetPassword(getPasswordCredential(keycloakBaseUser.getPassword()));
+        userResource.roles()
                 .clientLevel(getClient().getId())
                 .add(Collections.singletonList(getClientRole(getClient(), keycloakRole)));
         return userResource;
@@ -110,9 +108,9 @@ public class KeycloakServiceImpl implements KeycloakService {
         if (userId != null) getUsersResource().delete(userId);
     }
 
-    private CredentialRepresentation getPasswordCredential(String password, boolean temporary) {
+    private CredentialRepresentation getPasswordCredential(String password) {
         CredentialRepresentation passwordCred = new CredentialRepresentation();
-        passwordCred.setTemporary(temporary);
+        passwordCred.setTemporary(false);
         passwordCred.setType(CredentialRepresentation.PASSWORD);
         passwordCred.setValue(password);
         return passwordCred;
@@ -178,7 +176,7 @@ public class KeycloakServiceImpl implements KeycloakService {
             throw new BadRequestException("Username or password is empty");
         }
 
-        String tokenUrl = this.keycloakConfigProperties.getKeycloakUrl() + "/realms/" + this.keycloakConfigProperties.getRealm() + "/protocol/openid-connect/token";
+        String tokenUrl = buildTokenEndpoint("token");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -190,9 +188,9 @@ public class KeycloakServiceImpl implements KeycloakService {
         form.add("password", password);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+            var response = restTemplate.postForEntity(tokenUrl, request, Map.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map<String, Object> body = response.getBody();
+                var body = response.getBody();
                 String accessToken = (String) body.get("access_token");
                 String refreshToken = (String) body.get("refresh_token");
                 Integer expiresIn = (Integer) body.get("expires_in");
@@ -222,7 +220,7 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     @Override
     public void logout(String accessToken, String refreshToken) {
-        String logoutUrl = this.keycloakConfigProperties.getKeycloakUrl() + "/realms/" + this.keycloakConfigProperties.getRealm() + "/protocol/openid-connect/logout";
+        String logoutUrl = buildTokenEndpoint("logout");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -277,7 +275,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         if (users.isEmpty()) {
             throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.user-not-found-by-email", null, LocaleContextHolder.getLocale()));
         }
-        UserRepresentation userToUpdate = users.get(0);
+        UserRepresentation userToUpdate = users.getFirst();
         userToUpdate.setFirstName(keycloakBaseUser.getFirstName());
         userToUpdate.setLastName(keycloakBaseUser.getLastName());
         userToUpdate.setEmail(keycloakBaseUser.getEmail());
@@ -310,8 +308,6 @@ public class KeycloakServiceImpl implements KeycloakService {
             throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.incorrect-old-password", null, LocaleContextHolder.getLocale()));
         }
     }
-
-    // end of Akhan's code
 
     @Override
     public AuthResponse registerUser(KeycloakBaseUser req, KeycloakRole keycloakRole) {
@@ -351,46 +347,64 @@ public class KeycloakServiceImpl implements KeycloakService {
     @Override
     public AuthResponse refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new BadRequestException("Refresh token is empty");
+            throw new IllegalArgumentException("Refresh token is required");
         }
 
-        String tokenUrl =  this.keycloakConfigProperties.getKeycloakUrl() + "/realms/" + this.keycloakConfigProperties.getRealm() + "/protocol/openid-connect/token";
+        String url = buildTokenEndpoint("token");
+
+        RestTemplate rt = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("grant_type", "refresh_token");
-        form.add("client_id", this.keycloakConfigProperties.getClientId());
-        form.add("client_secret", this.keycloakConfigProperties.getClientSecret());
-        form.add("refresh_token", refreshToken);
-
-        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+        HttpEntity<MultiValueMap<String, String>> req = getMultiValueMapHttpEntity(refreshToken, headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, request, Map.class);
+            ResponseEntity<KeycloakTokenResponse> resp = rt.postForEntity(
+                    url, req, KeycloakTokenResponse.class
+            );
 
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                Map<String, Object> body = response.getBody();
-
-                String accessToken = (String) body.get("access_token");
-                String newRefreshToken = (String) body.get("refresh_token");
-                Integer expiresIn = (Integer) body.get("expires_in");
-                Integer refreshExpIn = (Integer) body.get("refresh_expires_in");
-                String tokenType = (String) body.get("token_type");
-
-                return AuthResponse.builder()
-                        .accessToken(accessToken)
-                        .refreshToken(newRefreshToken != null ? newRefreshToken : refreshToken)
-                        .expiresIn(expiresIn != null ? expiresIn.longValue() : 3600L)
-                        .refreshExpiresIn(refreshExpIn != null ? refreshExpIn.longValue() : null)
-                        .tokenType(tokenType != null ? tokenType : "Bearer")
-                        .build();
-            } else {
-                throw new RuntimeException("Ошибка обновления токена: " + response.getStatusCode());
+            KeycloakTokenResponse body = resp.getBody();
+            if (resp.getStatusCode().is2xxSuccessful() && body != null) {
+                return new AuthResponse(
+                        body.accessToken(),
+                        body.refreshToken(),
+                        body.expiresIn(),
+                        body.refreshExpiresIn(),
+                        body.tokenType()
+                );
             }
+            throw new RuntimeException("Unexpected refresh response: " + resp.getStatusCode());
+
+        } catch (HttpClientErrorException e) {
+            String msg = e.getResponseBodyAsString();
+            if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                throw new IllegalArgumentException("Refresh failed: invalid_grant (refresh token expired/rotated or session not active). Body: " + msg);
+            }
+            if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                throw new IllegalStateException("Refresh failed: invalid_client (check client credentials). Body: " + msg);
+            }
+            throw e;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Неверный или истекший refresh token: " + e.getMessage());
+            throw new RuntimeException("Refresh failed: " + e.getMessage(), e);
         }
+    }
+
+    private HttpEntity<MultiValueMap<String, String>> getMultiValueMapHttpEntity(String refreshToken, HttpHeaders headers) {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "refresh_token");
+        form.add("client_id", keycloakConfigProperties.getClientId());
+        if (keycloakConfigProperties.getClientSecret() != null && !keycloakConfigProperties.getClientSecret().isBlank()) {
+            form.add("client_secret", keycloakConfigProperties.getClientSecret());
+        }
+        form.add("refresh_token", refreshToken);
+
+        return new HttpEntity<>(form, headers);
+    }
+
+    private String buildTokenEndpoint(String endpointType) {
+        String base = keycloakConfigProperties.getKeycloakUrl();
+        if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
+        return base + "/realms/" + keycloakConfigProperties.getRealm() + "/protocol/openid-connect/" + endpointType;
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -74,11 +73,9 @@ public class SecurityConfig {
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverterForKeycloak() {
         Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter = jwt -> {
-            // Проверяем наличие resource_access в токене
             Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
 
             if (resourceAccess == null) {
-                // Для master realm используем realm_access или возвращаем базовые роли
                 Map<String, Object> realmAccess = jwt.getClaim("realm_access");
                 if (realmAccess != null && realmAccess.containsKey("roles")) {
                     @SuppressWarnings("unchecked")
@@ -87,7 +84,7 @@ public class SecurityConfig {
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
                 }
-                return List.of(new SimpleGrantedAuthority("USER")); // роль по умолчанию
+                return List.of(new SimpleGrantedAuthority("USER"));
             }
 
             Object client = resourceAccess.get(clientId);
