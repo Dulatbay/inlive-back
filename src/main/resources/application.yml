@@ -7,6 +7,7 @@ spring:
     client-secret: ${KEYCLOAK_CLIENT_SECRET:RBvTqKkuKZamivUjBfvVN4556GADm25V}
     username: ${KEYCLOAK_ADMIN:admin}
     password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    send-email: false
 
   datasource:
     url: jdbc:postgresql://${POSTGRES_ADDRESS:localhost}:${POSTGRES_ADDRESS_PORT:5434}/${POSTGRES_DB_NAME:inlive}

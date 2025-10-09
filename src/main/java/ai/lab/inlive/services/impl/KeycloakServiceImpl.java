@@ -1,7 +1,7 @@
 package ai.lab.inlive.services.impl;
 
+import ai.lab.inlive.config.properties.KeycloakConfigProperties;
 import ai.lab.inlive.dto.request.UpdatePasswordRequest;
-import ai.lab.inlive.dto.request.UserRegistrationRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakError;
@@ -26,7 +26,6 @@ import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.*;
@@ -38,7 +37,6 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -46,24 +44,7 @@ import java.util.Optional;
 public class KeycloakServiceImpl implements KeycloakService {
 
     private final RestTemplate restTemplate;
-
-    @Value("${spring.application.realm}")
-    private String realm;
-
-    @Value("${spring.application.client-id}")
-    private String clientId;
-
-    @Value("${spring.application.keycloak-url}")
-    private String keycloakUrl;
-
-    @Value("${spring.application.username}")
-    private String username;
-
-    @Value("${spring.application.password}")
-    private String password;
-
-    @Value("${spring.application.client-secret}")
-    private String clientSecret;
+    private final KeycloakConfigProperties keycloakConfigProperties;
 
     private final MessageSource messageSource;
 
@@ -77,11 +58,13 @@ public class KeycloakServiceImpl implements KeycloakService {
             userId = CreatedResponseUtil.getCreatedId(response);
             UserResource userResource = setupUserResource(sellerRegistrationRequest, keycloakRole, userId);
 
-            try {
-                sendEmail(userId);
-            } catch (Exception e) {
-                log.error("Exception: ", e);
-                throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.invalid-email", null, LocaleContextHolder.getLocale()));
+            if (keycloakConfigProperties.isSendEmail()) {
+                try {
+                    sendEmail(userId);
+                } catch (Exception e) {
+                    log.error("Exception: ", e);
+                    throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.invalid-email", null, LocaleContextHolder.getLocale()));
+                }
             }
 
             return userResource.toRepresentation();
@@ -143,10 +126,43 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     private Keycloak getAdminKeycloak() {
         return KeycloakBuilder.builder()
-                .serverUrl(keycloakUrl)
-                .realm(realm)
-                .clientId(clientId)
-                .clientSecret(clientSecret)
+                .serverUrl(this.keycloakConfigProperties.getKeycloakUrl())
+                .realm(this.keycloakConfigProperties.getRealm())
+                .clientId(this.keycloakConfigProperties.getClientId())
+                .clientSecret(this.keycloakConfigProperties.getClientSecret())
+                .grantType(OAuth2Constants.PASSWORD)
+                .username(this.keycloakConfigProperties.getAdminUsername())
+                .password(this.keycloakConfigProperties.getAdminPassword())
+                .resteasyClient(new ResteasyClientBuilderImpl()
+                        .connectionPoolSize(10)
+                        .build())
+                .build();
+    }
+
+
+    private RealmResource getRealmResource() {
+        return getAdminKeycloak().realm(this.keycloakConfigProperties.getRealm());
+    }
+
+    private UsersResource getUsersResource() {
+        return getRealmResource().users();
+    }
+
+    private ClientRepresentation getClient() {
+        return getRealmResource().clients()
+                .findByClientId(this.keycloakConfigProperties.getClientId()).getFirst();
+    }
+
+    private void sendEmail(String userId) {
+        getUsersResource().get(userId).sendVerifyEmail();
+    }
+
+    private Keycloak getCurrentKeycloak(String username, String password) {
+        return KeycloakBuilder.builder()
+                .serverUrl(this.keycloakConfigProperties.getKeycloakUrl())
+                .realm(this.keycloakConfigProperties.getRealm())
+                .clientId(this.keycloakConfigProperties.getClientId())
+                .clientSecret(this.keycloakConfigProperties.getClientSecret())
                 .grantType(OAuth2Constants.PASSWORD)
                 .username(username)
                 .password(password)
@@ -156,52 +172,20 @@ public class KeycloakServiceImpl implements KeycloakService {
                 .build();
     }
 
-
-    private RealmResource getRealmResource() {
-        return getAdminKeycloak().realm(realm);
-    }
-
-    private UsersResource getUsersResource() {
-        return getRealmResource().users();
-    }
-
-    private ClientRepresentation getClient() {
-        return getRealmResource().clients()
-                .findByClientId(clientId).getFirst();
-    }
-
-    private void sendEmail(String userId) {
-        getUsersResource().get(userId).sendVerifyEmail();
-    }
-
-    private Keycloak getKeycloak(String username, String password) {
-        return KeycloakBuilder.builder()
-                .serverUrl(keycloakUrl)
-                .realm(realm)
-                .clientId(clientId)
-                .clientSecret(clientSecret)
-                .grantType(OAuth2Constants.PASSWORD)
-                .username(username)
-                .password(password)
-                .resteasyClient(new ResteasyClientBuilderImpl()
-                        .connectionPoolSize(10).build())
-                .build();
-    }
-
     @Override
     public AuthResponse getAuthResponse(String username, String password) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             throw new BadRequestException("Username or password is empty");
         }
 
-        String tokenUrl = keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/token";
+        String tokenUrl = this.keycloakConfigProperties.getKeycloakUrl() + "/realms/" + this.keycloakConfigProperties.getRealm() + "/protocol/openid-connect/token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "password");
-        form.add("client_id", clientId);
-        form.add("client_secret", clientSecret);
+        form.add("client_id", this.keycloakConfigProperties.getClientId());
+        form.add("client_secret", this.keycloakConfigProperties.getClientSecret());
         form.add("username", username);
         form.add("password", password);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
@@ -238,14 +222,14 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     @Override
     public void logout(String accessToken, String refreshToken) {
-        String logoutUrl = keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/logout";
+        String logoutUrl = this.keycloakConfigProperties.getKeycloakUrl() + "/realms/" + this.keycloakConfigProperties.getRealm() + "/protocol/openid-connect/logout";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("client_id", clientId);
-        form.add("client_secret", clientSecret);
+        form.add("client_id", this.keycloakConfigProperties.getClientId());
+        form.add("client_secret", this.keycloakConfigProperties.getClientSecret());
         form.add("refresh_token", refreshToken);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
@@ -309,7 +293,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     @Override
     public void updatePassword(String keycloakId, UpdatePasswordRequest updatePassword) {
         try {
-            var keycloak = getKeycloak(updatePassword.getEmail(), updatePassword.getOldPassword());
+            var keycloak = getCurrentKeycloak(updatePassword.getEmail(), updatePassword.getOldPassword());
             keycloak.tokenManager().getAccessTokenString();
 
             UserResource userResource = getUsersResource().get(keycloakId);
@@ -330,73 +314,18 @@ public class KeycloakServiceImpl implements KeycloakService {
     // end of Akhan's code
 
     @Override
-    public AuthResponse registerUser(UserRegistrationRequest req) {
+    public AuthResponse registerUser(KeycloakBaseUser req, KeycloakRole keycloakRole) {
         validate(req);
-
-        try (Keycloak adminKC = getAdminKeycloak()) {
-            RealmResource realmResource = adminKC.realm(realm);
-            UsersResource users = realmResource.users();
-
-            // 1) Проверка существования по email/username (лучше хранить username = email)
-            if (!users.search(req.email(), true).isEmpty()) {
-                throw new IllegalArgumentException("Пользователь с таким email уже существует");
-            }
-
-            // 2) Создание пользователя
-            UserRepresentation user = new UserRepresentation();
-            user.setUsername(req.email());
-            user.setEmail(req.email());
-            user.setFirstName(req.firstName());
-            user.setLastName(req.lastName());
-            user.setEnabled(true);
-            user.setEmailVerified(false);
-            user.setAttributes(Map.of("appRole", List.of(req.role())));
-
-            Response createResp = users.create(user);
-            if (createResp.getStatus() == 201) {
-                String userId = CreatedResponseUtil.getCreatedId(createResp);
-                log.info("User created in Keycloak, id={}", userId);
-
-                UserResource userRes = users.get(userId);
-
-                // 3) Установка пароля
-                CredentialRepresentation passwordCred = new CredentialRepresentation();
-                passwordCred.setType(CredentialRepresentation.PASSWORD);
-                passwordCred.setTemporary(false);
-                passwordCred.setValue(req.password());
-                userRes.resetPassword(passwordCred);
-
-                // 4) Назначение роли
-                assignRole(realmResource, userRes, req.role());
-
-                // (опционально) Отправка email-верификации:
-                // userRes.sendVerifyEmail();
-
-                // 5) Немедленный логин нового пользователя — получение токенов
-                AuthResponse tokens = loginAsNewUser(req.email(), req.password());
-
-                return tokens;
-            } else if (createResp.getStatus() == 409) {
-                throw new IllegalArgumentException("Пользователь уже существует (409 Conflict)");
-            } else {
-                String err = Optional.ofNullable(createResp.getEntity())
-                        .map(Object::toString).orElse("unknown");
-                log.error("Create user failed: status={}, body={}", createResp.getStatus(), err);
-                throw new RuntimeException("Ошибка создания пользователя в Keycloak: " + createResp.getStatus());
-            }
-        } catch (Exception e) {
-            log.error("registerUser failed", e);
-            throw (e instanceof RuntimeException re) ? re : new RuntimeException(e);
-        }
+        this.createUserByRole(req, keycloakRole);
+        return this.loginAsNewUser(req.getEmail(), req.getPassword());
     }
 
-    private void validate(UserRegistrationRequest r) {
+    private void validate(KeycloakBaseUser r) {
         if (r == null
-                || isBlank(r.email())
-                || isBlank(r.password())
-                || isBlank(r.firstName())
-                || isBlank(r.lastName())
-                || isBlank(r.role())) {
+                || isBlank(r.getEmail())
+                || isBlank(r.getLastName())
+                || isBlank(r.getPassword())
+                || isBlank(r.getFirstName())) {
             throw new IllegalArgumentException("Invalid registration request");
         }
     }
@@ -405,48 +334,8 @@ public class KeycloakServiceImpl implements KeycloakService {
         return s == null || s.isBlank();
     }
 
-    private void assignRole(RealmResource realmResource, UserResource userRes, String roleName) {
-        // Попытка найти realm-role
-        Optional<RoleRepresentation> realmRoleOpt = realmResource.roles().list()
-                .stream()
-                .filter(r -> r.getName().equalsIgnoreCase(roleName))
-                .findFirst();
-
-        if (realmRoleOpt.isPresent()) {
-            userRes.roles().realmLevel().add(List.of(realmRoleOpt.get()));
-            log.info("Assigned realm role: {}", roleName);
-            return;
-        }
-
-        // Если realm-role не нашли — пытаемся client-role по clientId
-        ClientRepresentation client = realmResource.clients().findByClientId(clientId)
-                .stream().findFirst()
-                .orElseThrow(() -> new IllegalStateException("Client not found by clientId=" + clientId));
-
-        var clientRoles = realmResource.clients().get(client.getId()).roles().list();
-        var clientRoleOpt = clientRoles.stream()
-                .filter(cr -> cr.getName().equalsIgnoreCase(roleName))
-                .findFirst();
-
-        if (clientRoleOpt.isPresent()) {
-            userRes.roles().clientLevel(client.getId()).add(List.of(clientRoleOpt.get()));
-            log.info("Assigned client role: {} for client={}", roleName, clientId);
-        } else {
-            log.warn("Role {} not found as realm or client role — пропускаю назначение", roleName);
-        }
-    }
-
     private AuthResponse loginAsNewUser(String userEmail, String userPassword) {
-        // Если клиент конфиденциальный — используй clientSecret; для public-client secret не нужен
-        try (var kc = KeycloakBuilder.builder()
-                .serverUrl(keycloakUrl)
-                .realm(realm)
-                .clientId(clientId)
-                .clientSecret(clientSecret) // если public-client — удали эту строку
-                .username(userEmail)
-                .password(userPassword)
-                .grantType(OAuth2Constants.PASSWORD)
-                .build()) {
+        try (var kc = this.getCurrentKeycloak(userEmail, userPassword)) {
 
             var token = kc.tokenManager().getAccessToken();
             return new AuthResponse(
@@ -465,15 +354,15 @@ public class KeycloakServiceImpl implements KeycloakService {
             throw new BadRequestException("Refresh token is empty");
         }
 
-        String tokenUrl = keycloakUrl + "/realms/" + realm + "/protocol/openid-connect/token";
+        String tokenUrl =  this.keycloakConfigProperties.getKeycloakUrl() + "/realms/" + this.keycloakConfigProperties.getRealm() + "/protocol/openid-connect/token";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "refresh_token");
-        form.add("client_id", clientId);
-        form.add("client_secret", clientSecret);
+        form.add("client_id", this.keycloakConfigProperties.getClientId());
+        form.add("client_secret", this.keycloakConfigProperties.getClientSecret());
         form.add("refresh_token", refreshToken);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);

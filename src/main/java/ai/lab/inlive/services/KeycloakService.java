@@ -15,7 +15,7 @@ public interface KeycloakService {
 
     AuthResponse getAuthResponse(String email, String password);
 
-    AuthResponse registerUser(UserRegistrationRequest registrationRequest);
+    AuthResponse registerUser(KeycloakBaseUser registrationRequest, KeycloakRole keycloakRole);
 
     AuthResponse refreshToken(String refreshToken);
 

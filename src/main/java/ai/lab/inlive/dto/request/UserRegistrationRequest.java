@@ -17,9 +17,6 @@ public record UserRegistrationRequest(
         String firstName,
 
         @NotBlank(message = "Last name is required")
-        String lastName,
-
-        @NotBlank(message = "Role is required")
-        String role
+        String lastName
 ) {
 }

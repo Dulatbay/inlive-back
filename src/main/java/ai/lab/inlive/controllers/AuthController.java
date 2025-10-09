@@ -4,6 +4,8 @@ import ai.lab.inlive.dto.request.RefreshTokenRequest;
 import ai.lab.inlive.dto.request.UserAuthRequest;
 import ai.lab.inlive.dto.request.UserRegistrationRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
+import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
+import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,10 +35,10 @@ public class AuthController {
     }
 
     @Operation(summary = "Регистрация пользователя", description = "Регистрация нового пользователя (CLIENT или SUPER_MANAGER)")
-    @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AuthResponse> register(@RequestBody @Valid UserRegistrationRequest registrationRequest) {
-        log.info("Registration attempt for user: {} with role: {}", registrationRequest.email(), registrationRequest.role());
-        AuthResponse authResponse = keycloakService.registerUser(registrationRequest);
+    @PostMapping(value = "/client/register", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<AuthResponse> register(@RequestBody @Valid KeycloakBaseUser registrationRequest) {
+        log.info("Registration attempt for user: {}", registrationRequest.getEmail());
+        AuthResponse authResponse = keycloakService.registerUser(registrationRequest, KeycloakRole.CLIENT);
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
 
