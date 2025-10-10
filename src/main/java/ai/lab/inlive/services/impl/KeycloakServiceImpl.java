@@ -4,10 +4,13 @@ import ai.lab.inlive.config.properties.KeycloakConfigProperties;
 import ai.lab.inlive.dto.request.UpdatePasswordRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.dto.response.KeycloakTokenResponse;
+import ai.lab.inlive.entities.User;
+import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakError;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -46,8 +49,10 @@ public class KeycloakServiceImpl implements KeycloakService {
     private final RestTemplate restTemplate;
     private final KeycloakConfigProperties keycloakConfigProperties;
     private final MessageSource messageSource;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public UserRepresentation createUserByRole(KeycloakBaseUser sellerRegistrationRequest, KeycloakRole keycloakRole) {
         UserRepresentation userRepresentation = setupUserRepresentation(sellerRegistrationRequest);
         String userId = null;
@@ -64,6 +69,13 @@ public class KeycloakServiceImpl implements KeycloakService {
                     throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.invalid-email", null, LocaleContextHolder.getLocale()));
                 }
             }
+
+            // todo: create user in database
+            User user = new User();
+            user.setKeycloakId(userId);
+            user.setFirstName(sellerRegistrationRequest.getFirstName());
+            user.setLastName(sellerRegistrationRequest.getLastName());
+            userRepository.save(user);
 
             return userResource.toRepresentation();
         } catch (Exception e) {

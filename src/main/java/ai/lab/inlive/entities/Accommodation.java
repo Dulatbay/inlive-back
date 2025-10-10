@@ -28,8 +28,12 @@ public class Accommodation extends AbstractEntity<Long> {
 
     private Double rating;
     private Boolean approved;
+
+    // fk - to User entity
     private String approvedBy;
-    private String ownerId;
+
+    // fk - to User entity
+    private String ownerId; //
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AccImages> images = new ArrayList<>();
