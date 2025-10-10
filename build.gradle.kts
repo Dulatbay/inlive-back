@@ -31,10 +31,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.security:spring-security-oauth2-client")
     implementation("io.jsonwebtoken:jjwt:0.9.1")
-    implementation("org.keycloak:keycloak-admin-client:26.0.7") // точная версия как в контейнере
+    implementation("org.keycloak:keycloak-admin-client:26.0.7")
     implementation("io.swagger.core.v3:swagger-annotations:2.2.38")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310") // для поддержки LocalDateTime
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
     implementation("jakarta.ws.rs:jakarta.ws.rs-api:3.1.0")
     runtimeOnly("org.postgresql:postgresql")
     implementation("org.apache.commons:commons-lang3")
