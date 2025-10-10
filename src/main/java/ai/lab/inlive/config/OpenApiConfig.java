@@ -13,18 +13,18 @@ import io.swagger.v3.oas.annotations.servers.Server;
 @OpenAPIDefinition(
         info = @Info(
                 contact = @Contact(
-                        name = "QIT",
-                        email = "akhan.dulatbay@gmail.com",
-                        url = ""
+                        name = "CAIR Team",
+                        email = "ailab@sdu.edu.kz",
+                        url = "https://sdu.edu.kz/en/faculty-engineering/"
                 ),
-                description = "OpenApi documentation for Wonder Security",
-                title = "OpenApi specification - QIT",
+                description = "OpenApi documentation for InLive Hotel",
+                title = "OpenApi specification - CAIR Team",
                 version = "1.0",
                 license = @License(
-                        name = "Licence name",
-                        url = ""
+                        name = "MIT License",
+                        url = "https://opensource.org/license/mit/"
                 ),
-                termsOfService = "Terms of service"
+                termsOfService = "https://inlive-hotel.kz/terms"
         ),
         servers = {
                 @Server(
@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
                 ),
                 @Server(
                         description = "PROD ENV",
-                        url = "https://wonderuserrepository-3gn7q5gs6q-ey.a.run.app/api"
+                        url = "https://inlive-hotel.kz/api"
                 )
         },
         security = {

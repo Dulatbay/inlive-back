@@ -26,6 +26,9 @@ public abstract class AbstractEntity<T extends Serializable> {
 //    @Convert(converter = LocalDateTimeAttributeConverter.class)
     private LocalDateTime updatedAt;
 
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
+
     @PrePersist
     protected void onCreate() {
         this.updatedAt = this.createdAt = LocalDateTime.now(ZONE_ID);
