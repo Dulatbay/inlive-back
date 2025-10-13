@@ -1,7 +1,7 @@
 package ai.lab.inlive.entities;
 
-import ai.lab.inlive.enums.ClientResponseStatus;
-import ai.lab.inlive.enums.PriceRequestStatus;
+import ai.lab.inlive.entities.enums.ClientResponseStatus;
+import ai.lab.inlive.entities.enums.PriceRequestStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,14 +11,15 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "price_request")
 public class PriceRequest extends AbstractEntity<Long> {
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_search_req_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "acc_search_request_id")
     private AccSearchRequest searchRequest;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_unit_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "accommodation_unit_id")
     private AccommodationUnit unit;
 
+    @Column(nullable = false)
     private Double price;
 
     @Enumerated(EnumType.STRING)

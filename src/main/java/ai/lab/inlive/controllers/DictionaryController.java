@@ -34,7 +34,7 @@ public class DictionaryController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<DictionaryResponse> createDictionary(
             @RequestBody @Valid DictionaryCreateRequest request) {
-        log.info("Creating dictionary: {} of type: {}", request.key(), request.type());
+        log.info("Creating dictionary: {}", request.getKey());
         DictionaryResponse response = dictionaryService.createDictionary(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -54,16 +54,6 @@ public class DictionaryController {
     public ResponseEntity<List<DictionaryResponse>> getAllDictionaries() {
         log.info("Fetching all dictionaries");
         List<DictionaryResponse> response = dictionaryService.getAllDictionaries();
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Получить элементы справочника по типу", description = "Получение всех элементов справочника определенного типа")
-    @GetMapping("/by-type/{type}")
-    public ResponseEntity<List<DictionaryResponse>> getDictionariesByType(
-            @Parameter(description = "Тип справочника")
-            @PathVariable String type) {
-        log.info("Fetching dictionaries by type: {}", type);
-        List<DictionaryResponse> response = dictionaryService.getDictionariesByType(type);
         return ResponseEntity.ok(response);
     }
 

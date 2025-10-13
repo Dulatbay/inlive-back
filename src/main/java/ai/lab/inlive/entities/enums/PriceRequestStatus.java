@@ -1,4 +1,4 @@
-package ai.lab.inlive.enums;
+package ai.lab.inlive.entities.enums;
 
 import lombok.Getter;
 

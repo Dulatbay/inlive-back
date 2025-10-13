@@ -1,6 +1,6 @@
 package ai.lab.inlive.entities;
 
-import ai.lab.inlive.enums.UnitType;
+import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,12 +10,9 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "acc_search_request_unit_type")
 public class AccSearchRequestUnitType extends AbstractEntity<Long> {
-
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_s_r_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "search_request_id", nullable = false)
     private AccSearchRequest searchRequest;
-
 
     @Enumerated(EnumType.STRING)
     @Column(name = "unit_type", nullable = false)

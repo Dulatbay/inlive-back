@@ -1,5 +1,6 @@
 package ai.lab.inlive.entities;
 
+import ai.lab.inlive.config.converters.LocalDateTimeAttributeConverter;
 import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -7,7 +8,8 @@ import lombok.Getter;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-import static ai.lab.inlive.dto.response.ErrorResponse.ZONE_ID;
+import static ai.lab.inlive.constants.ValueConstants.ZONE_ID;
+
 
 @EqualsAndHashCode
 @Getter
@@ -19,11 +21,11 @@ public abstract class AbstractEntity<T extends Serializable> {
     T id;
 
     @Column(name = "created_at", nullable = false)
-//    @Convert(converter = LocalDateTimeAttributeConverter.class)
+    @Convert(converter = LocalDateTimeAttributeConverter.class)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
-//    @Convert(converter = LocalDateTimeAttributeConverter.class)
+    @Convert(converter = LocalDateTimeAttributeConverter.class)
     private LocalDateTime updatedAt;
 
     @Column(name = "is_deleted", nullable = false)

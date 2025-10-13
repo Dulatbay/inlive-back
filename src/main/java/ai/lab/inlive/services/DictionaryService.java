@@ -17,8 +17,6 @@ public interface DictionaryService {
 
     List<DictionaryResponse> getAllDictionaries();
 
-    List<DictionaryResponse> getDictionariesByType(String type);
-
     DictionaryListResponse getDictionariesWithFilters(DictionaryFilterRequest filterRequest);
 
     @Transactional

@@ -11,8 +11,8 @@ import java.util.List;
 @Data
 @Entity
 @Table(name = "districts")
-public class District extends  AbstractEntity<Long> {
-    @ManyToOne(optional = false)
+public class District extends AbstractEntity<Long> {
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id")
     private City city;
 

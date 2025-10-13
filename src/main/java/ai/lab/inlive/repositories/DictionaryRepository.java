@@ -1,6 +1,8 @@
 package ai.lab.inlive.repositories;
 
 import ai.lab.inlive.entities.Dictionary;
+import ai.lab.inlive.entities.enums.DictionaryKey;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,8 +21,6 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
     List<Dictionary> findAllByIsDeletedFalse();
 
     Page<Dictionary> findAllByIsDeletedFalse(Pageable pageable);
-
-    List<Dictionary> findByTypeAndIsDeletedFalse(String type);
 
     @Query(value = "SELECT * FROM dictionaries d WHERE 1=1 " +
            "AND (:type IS NULL OR d.type = :type) " +
@@ -41,5 +41,5 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
             Pageable pageable
     );
 
-    boolean existsByKeyAndTypeAndIsDeletedFalse(String key, String type);
+    boolean existsByKeyAndIsDeletedFalse(@NotBlank DictionaryKey key);
 }

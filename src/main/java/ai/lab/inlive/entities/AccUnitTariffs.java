@@ -1,6 +1,5 @@
 package ai.lab.inlive.entities;
 
-import ai.lab.inlive.enums.RangeType;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,12 +9,12 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "acc_unit_tariffs")
 public class AccUnitTariffs extends AbstractEntity<Long> {
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "accommodation_id")
     private Accommodation accommodation;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_unit_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "accommodation_unit_id")
     private AccommodationUnit unit;
 
     @Column(nullable = false)
@@ -24,10 +23,7 @@ public class AccUnitTariffs extends AbstractEntity<Long> {
     @Column(nullable = false, length = 3)
     private String currency = "KZT";
 
-    @Enumerated(EnumType.STRING)
-    private RangeType rangeTypeEnum;
-
-    @ManyToOne
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "range_dictionary_id")
     private Dictionary rangeType;
 }

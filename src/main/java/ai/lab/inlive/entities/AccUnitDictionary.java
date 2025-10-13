@@ -1,9 +1,6 @@
 package ai.lab.inlive.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -12,15 +9,15 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "acc_unit_dictionary")
 public class AccUnitDictionary extends AbstractEntity<Long> {
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "accommodation_id")
     private Accommodation accommodation;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "acc_unit_id")
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "accommodation_unit_id")
     private AccommodationUnit unit;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "dictionary_id")
     private Dictionary dictionary;
 }

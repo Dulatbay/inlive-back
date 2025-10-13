@@ -1,8 +1,7 @@
 package ai.lab.inlive.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import ai.lab.inlive.entities.enums.DictionaryKey;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -11,15 +10,12 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "dictionaries")
 public class Dictionary extends AbstractEntity<Long> {
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String key; // todo: enum
+    private DictionaryKey key;
 
-    // todo: transform all fields to snake case
     // todo: create paginated response(base class for extends) for some queries (KZH, WONDER)
 
     @Column(nullable = false)
     private String value;
-
-    @Column(nullable = false)
-    private String type;
 }

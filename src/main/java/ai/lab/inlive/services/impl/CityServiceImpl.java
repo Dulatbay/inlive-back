@@ -1,22 +1,12 @@
 package ai.lab.inlive.services.impl;
 
-import ai.lab.inlive.dto.request.CityCreateRequest;
-import ai.lab.inlive.dto.request.CityFilterRequest;
-import ai.lab.inlive.dto.request.CityUpdateRequest;
-import ai.lab.inlive.dto.response.CityListResponse;
 import ai.lab.inlive.dto.response.CityResponse;
+import ai.lab.inlive.entities.AbstractEntity;
 import ai.lab.inlive.entities.City;
-import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.repositories.CityRepository;
 import ai.lab.inlive.services.CityService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,15 +29,15 @@ public class CityServiceImpl implements CityService {
 
     private CityResponse mapToResponse(City city) {
         List<Long> districtIds = city.getDistricts().stream()
-                .map(district -> district.getId())
+                .map(AbstractEntity::getId)
                 .collect(Collectors.toList());
 
-        return new CityResponse(
-                city.getId(),
-                city.getName(),
-                districtIds,
-                city.getCreatedAt(),
-                city.getUpdatedAt()
-        );
+        CityResponse response = new CityResponse();
+        response.setId(city.getId());
+        response.setName(city.getName());
+        response.setDistrictIds(districtIds);
+        response.setCreatedAt(city.getCreatedAt());
+        response.setUpdatedAt(city.getUpdatedAt());
+        return response;
     }
 }

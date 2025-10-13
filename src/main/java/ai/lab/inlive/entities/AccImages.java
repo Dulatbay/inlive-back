@@ -9,7 +9,7 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "acc_images")
 public class AccImages extends AbstractEntity<Long> {
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "acc_id")
     private Accommodation accommodation;
 

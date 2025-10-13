@@ -32,16 +32,15 @@ public class DictionaryServiceImpl implements DictionaryService {
     @Override
     @Transactional
     public DictionaryResponse createDictionary(DictionaryCreateRequest request) {
-        log.info("Creating dictionary with key: {} and type: {}", request.getKey(), request.getType());
+        log.info("Creating dictionary with key: {}", request.getKey());
 
-        if (dictionaryRepository.existsByKeyAndTypeAndIsDeletedFalse(request.getKey(), request.getType())) {
-            throw new RuntimeException("Dictionary with key '" + request.getKey() + "' and type '" + request.getType() + "' already exists");
+        if (dictionaryRepository.existsByKeyAndIsDeletedFalse(request.getKey())) {
+            throw new RuntimeException("Dictionary with key '" + request.getKey() + "' already exists");
         }
 
         Dictionary dictionary = new Dictionary();
-        dictionary.setKey(request.getKey());
+        dictionary.setKey(dictionary.getKey());
         dictionary.setValue(request.getValue());
-        dictionary.setType(request.getType());
 
         Dictionary saved = dictionaryRepository.save(dictionary);
         log.info("Successfully created dictionary with ID: {}", saved.getId());
@@ -61,15 +60,6 @@ public class DictionaryServiceImpl implements DictionaryService {
     public List<DictionaryResponse> getAllDictionaries() {
         log.info("Fetching all dictionaries");
         List<Dictionary> dictionaries = dictionaryRepository.findAllByIsDeletedFalse();
-        return dictionaries.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<DictionaryResponse> getDictionariesByType(String type) {
-        log.info("Fetching dictionaries by type: {}", type);
-        List<Dictionary> dictionaries = dictionaryRepository.findByTypeAndIsDeletedFalse(type);
         return dictionaries.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -111,10 +101,10 @@ public class DictionaryServiceImpl implements DictionaryService {
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
 
-        if (request.getKey() != null && request.getType() != null) {
-            if (dictionaryRepository.existsByKeyAndTypeAndIsDeletedFalse(request.getKey(), request.getType())
-                && (!dictionary.getKey().equals(request.getKey()) || !dictionary.getType().equals(request.getType()))) {
-                throw new RuntimeException("Dictionary with key '" + request.getKey() + "' and type '" + request.getType() + "' already exists");
+        if (request.getKey() != null) {
+            if (dictionaryRepository.existsByKeyAndIsDeletedFalse(request.getKey())
+                && (!dictionary.getKey().equals(request.getKey()))) {
+                throw new RuntimeException("Dictionary with key '" + request.getKey() + "' already exists");
             }
         }
 
@@ -124,10 +114,6 @@ public class DictionaryServiceImpl implements DictionaryService {
 
         if (request.getValue() != null) {
             dictionary.setValue(request.getValue());
-        }
-
-        if (request.getType() != null) {
-            dictionary.setType(request.getType());
         }
 
         Dictionary updated = dictionaryRepository.save(dictionary);
@@ -162,9 +148,8 @@ public class DictionaryServiceImpl implements DictionaryService {
     private DictionaryResponse mapToResponse(Dictionary dictionary) {
         DictionaryResponse response = new DictionaryResponse();
         response.setId(dictionary.getId());
-        response.setKey(dictionary.getKey());
+        response.setKey(String.valueOf(dictionary.getKey()));
         response.setValue(dictionary.getValue());
-        response.setType(dictionary.getType());
         response.setCreatedAt(dictionary.getCreatedAt());
         response.setUpdatedAt(dictionary.getUpdatedAt());
         return response;

@@ -33,7 +33,7 @@ public class AccommodationController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<AccommodationResponse> createAccommodation(
             @RequestBody @Valid AccommodationCreateRequest request) {
-        log.info("Creating accommodation: {}", request.name());
+        log.info("Creating accommodation: {}", request.getName());
         AccommodationResponse response = accommodationService.createAccommodation(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

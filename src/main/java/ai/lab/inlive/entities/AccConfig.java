@@ -1,9 +1,6 @@
 package ai.lab.inlive.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,5 +17,6 @@ public class AccConfig extends AbstractEntity<Long> {
     @JoinColumn(name = "dictionary_id")
     private Dictionary dictionary;
 
+    @Column(name = "config_value", nullable = false)
     private String configValue;
 }

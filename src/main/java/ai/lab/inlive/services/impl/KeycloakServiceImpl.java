@@ -53,13 +53,13 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     @Override
     @Transactional
-    public UserRepresentation createUserByRole(KeycloakBaseUser sellerRegistrationRequest, KeycloakRole keycloakRole) {
-        UserRepresentation userRepresentation = setupUserRepresentation(sellerRegistrationRequest);
+    public UserRepresentation createUserByRole(KeycloakBaseUser baseUser, KeycloakRole keycloakRole) {
+        UserRepresentation userRepresentation = setupUserRepresentation(baseUser);
         String userId = null;
         try (Response response = getUsersResource().create(userRepresentation)) {
             handleUnsuccessfulResponse(response);
             userId = CreatedResponseUtil.getCreatedId(response);
-            UserResource userResource = setupUserResource(sellerRegistrationRequest, keycloakRole, userId);
+            UserResource userResource = setupUserResource(baseUser, keycloakRole, userId);
 
             if (keycloakConfigProperties.isSendEmail()) {
                 try {
@@ -73,8 +73,8 @@ public class KeycloakServiceImpl implements KeycloakService {
             // todo: create user in database
             User user = new User();
             user.setKeycloakId(userId);
-            user.setFirstName(sellerRegistrationRequest.getFirstName());
-            user.setLastName(sellerRegistrationRequest.getLastName());
+            user.setFirstName(baseUser.getFirstName());
+            user.setLastName(baseUser.getLastName());
             userRepository.save(user);
 
             return userResource.toRepresentation();
@@ -322,6 +322,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     @Override
+    @Transactional
     public AuthResponse registerUser(KeycloakBaseUser req, KeycloakRole keycloakRole) {
         validate(req);
         this.createUserByRole(req, keycloakRole);
