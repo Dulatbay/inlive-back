@@ -2,6 +2,7 @@ package ai.lab.inlive.services.impl;
 
 import ai.lab.inlive.dto.response.DistrictResponse;
 import ai.lab.inlive.entities.District;
+import ai.lab.inlive.mappers.DistrictMapper;
 import ai.lab.inlive.repositories.DistrictRepository;
 import ai.lab.inlive.services.DistrictService;
 import lombok.RequiredArgsConstructor;
@@ -16,13 +17,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DistrictServiceImpl implements DistrictService {
     private final DistrictRepository districtRepository;
+    private final DistrictMapper mapper;
 
     @Override
     public List<DistrictResponse> getAllDistricts() {
         log.info("Fetching all districts");
         List<District> districts = districtRepository.findAllByIsDeletedFalse();
         return districts.stream()
-                .map(this::mapToResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -31,18 +33,7 @@ public class DistrictServiceImpl implements DistrictService {
         log.info("Fetching districts for city ID: {}", cityId);
         List<District> districts = districtRepository.findByCityIdAndIsDeletedFalse(cityId);
         return districts.stream()
-                .map(this::mapToResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
-    }
-
-    private DistrictResponse mapToResponse(District district) {
-        DistrictResponse response = new DistrictResponse();
-        response.setId(district.getId());
-        response.setCityId(district.getCity().getId());
-        response.setCityName(district.getCity().getName());
-        response.setName(district.getName());
-        response.setCreatedAt(district.getCreatedAt());
-        response.setUpdatedAt(district.getUpdatedAt());
-        return response;
     }
 }

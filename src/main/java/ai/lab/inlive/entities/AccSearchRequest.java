@@ -14,8 +14,9 @@ import java.util.List;
 @Entity
 @Table(name = "acc_search_request")
 public class AccSearchRequest extends AbstractEntity<Long> {
-    @Column(length = 64, nullable = false)
-    private String author;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id", nullable = false)
+    private User author;
 
     @Column(name = "from_rating")
     private Double fromRating;

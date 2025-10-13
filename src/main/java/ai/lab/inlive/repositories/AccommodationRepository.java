@@ -22,7 +22,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     List<Accommodation> findByApprovedAndIsDeletedFalse(Boolean approved);
 
-    List<Accommodation> findByOwnerIdAndIsDeletedFalse(String ownerId);
+    List<Accommodation> findByOwnerIdIdAndIsDeletedFalse(Long ownerId);
 
     @Query(value = "SELECT * FROM accommodations a WHERE 1=1 " +
            "AND (:cityId IS NULL OR a.city_id = :cityId) " +

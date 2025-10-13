@@ -18,8 +18,6 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
 
     Optional<Dictionary> findByIdAndIsDeletedFalse(Long id);
 
-    List<Dictionary> findAllByIsDeletedFalse();
-
     Page<Dictionary> findAllByIsDeletedFalse(Pageable pageable);
 
     @Query(value = "SELECT * FROM dictionaries d WHERE 1=1 " +

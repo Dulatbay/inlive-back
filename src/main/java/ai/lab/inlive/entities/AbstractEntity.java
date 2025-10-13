@@ -34,6 +34,7 @@ public abstract class AbstractEntity<T extends Serializable> {
     @PrePersist
     protected void onCreate() {
         this.updatedAt = this.createdAt = LocalDateTime.now(ZONE_ID);
+        this.isDeleted = false;
     }
 
     @PreUpdate

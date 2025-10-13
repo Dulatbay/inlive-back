@@ -1,26 +1,21 @@
 package ai.lab.inlive.services.impl;
 
+import ai.lab.inlive.dto.params.DictionarySearchParams;
 import ai.lab.inlive.dto.request.DictionaryCreateRequest;
-import ai.lab.inlive.dto.request.DictionaryFilterRequest;
 import ai.lab.inlive.dto.request.DictionaryUpdateRequest;
-import ai.lab.inlive.dto.response.DictionaryListResponse;
 import ai.lab.inlive.dto.response.DictionaryResponse;
 import ai.lab.inlive.entities.Dictionary;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
+import ai.lab.inlive.mappers.DictionaryMapper;
 import ai.lab.inlive.repositories.DictionaryRepository;
 import ai.lab.inlive.services.DictionaryService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -28,10 +23,11 @@ import java.util.stream.Collectors;
 public class DictionaryServiceImpl implements DictionaryService {
 
     private final DictionaryRepository dictionaryRepository;
+    private final DictionaryMapper mapper;
 
     @Override
     @Transactional
-    public DictionaryResponse createDictionary(DictionaryCreateRequest request) {
+    public void createDictionary(DictionaryCreateRequest request) {
         log.info("Creating dictionary with key: {}", request.getKey());
 
         if (dictionaryRepository.existsByKeyAndIsDeletedFalse(request.getKey())) {
@@ -44,8 +40,6 @@ public class DictionaryServiceImpl implements DictionaryService {
 
         Dictionary saved = dictionaryRepository.save(dictionary);
         log.info("Successfully created dictionary with ID: {}", saved.getId());
-
-        return mapToResponse(saved);
     }
 
     @Override
@@ -53,49 +47,35 @@ public class DictionaryServiceImpl implements DictionaryService {
         log.info("Fetching dictionary by ID: {}", id);
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
-        return mapToResponse(dictionary);
+        return mapper.toDto(dictionary);
     }
 
     @Override
-    public List<DictionaryResponse> getAllDictionaries() {
+    public Page<DictionaryResponse> getAllDictionaries(Pageable pageable) {
         log.info("Fetching all dictionaries");
-        List<Dictionary> dictionaries = dictionaryRepository.findAllByIsDeletedFalse();
-        return dictionaries.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        var dictionaries = dictionaryRepository.findAllByIsDeletedFalse(pageable);
+
+        return dictionaries.map(mapper::toDto);
     }
 
     @Override
-    public DictionaryListResponse getDictionariesWithFilters(DictionaryFilterRequest filterRequest) {
-        log.info("Fetching dictionaries with filters: {}", filterRequest);
+    public Page<DictionaryResponse> searchWithParams(DictionarySearchParams dictionarySearchParams, Pageable pageable) {
+        log.info("Searching dictionaries with params: {}", dictionarySearchParams);
 
-        Sort sort = Sort.by(Sort.Direction.fromString(filterRequest.getSortDirection()), filterRequest.getSortBy());
-        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
-
-        Page<Dictionary> dictionariesPage = dictionaryRepository.findWithFilters(
-                filterRequest.getType(),
-                filterRequest.getIsDeleted(),
-                filterRequest.getKey(),
-                filterRequest.getValue(),
+        var dictionaries = dictionaryRepository.findWithFilters(
+                dictionarySearchParams.getType(),
+                dictionarySearchParams.getIsDeleted(),
+                dictionarySearchParams.getKey(),
+                dictionarySearchParams.getValue(),
                 pageable
         );
 
-        List<DictionaryResponse> dictionaries = dictionariesPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-
-        DictionaryListResponse response = new DictionaryListResponse();
-        response.setDictionaries(dictionaries);
-        response.setTotalPages(dictionariesPage.getTotalPages());
-        response.setTotalElements(dictionariesPage.getTotalElements());
-        response.setCurrentPage(dictionariesPage.getNumber());
-        response.setPageSize(dictionariesPage.getSize());
-        return response;
+        return dictionaries.map(mapper::toDto);
     }
 
     @Override
     @Transactional
-    public DictionaryResponse updateDictionary(Long id, DictionaryUpdateRequest request) {
+    public void updateDictionary(Long id, DictionaryUpdateRequest request) {
         log.info("Updating dictionary with ID: {}", id);
 
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
@@ -103,7 +83,7 @@ public class DictionaryServiceImpl implements DictionaryService {
 
         if (request.getKey() != null) {
             if (dictionaryRepository.existsByKeyAndIsDeletedFalse(request.getKey())
-                && (!dictionary.getKey().equals(request.getKey()))) {
+                    && (!dictionary.getKey().equals(request.getKey()))) {
                 throw new RuntimeException("Dictionary with key '" + request.getKey() + "' already exists");
             }
         }
@@ -116,10 +96,8 @@ public class DictionaryServiceImpl implements DictionaryService {
             dictionary.setValue(request.getValue());
         }
 
-        Dictionary updated = dictionaryRepository.save(dictionary);
+        dictionaryRepository.save(dictionary);
         log.info("Successfully updated dictionary with ID: {}", id);
-
-        return mapToResponse(updated);
     }
 
     @Override
@@ -143,15 +121,5 @@ public class DictionaryServiceImpl implements DictionaryService {
         dictionaryRepository.save(dictionary);
 
         log.info("Successfully deleted dictionary with ID: {}", id);
-    }
-
-    private DictionaryResponse mapToResponse(Dictionary dictionary) {
-        DictionaryResponse response = new DictionaryResponse();
-        response.setId(dictionary.getId());
-        response.setKey(String.valueOf(dictionary.getKey()));
-        response.setValue(dictionary.getValue());
-        response.setCreatedAt(dictionary.getCreatedAt());
-        response.setUpdatedAt(dictionary.getUpdatedAt());
-        return response;
     }
 }

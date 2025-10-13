@@ -37,7 +37,6 @@ public class SecurityConfig {
             "/webjars/**",
             "/auth/**",
             "/actuator/**",
-            "/sellers/registration",
     };
     @Value("${spring.application.client-id}")
     private String clientId;
@@ -74,27 +73,17 @@ public class SecurityConfig {
     public JwtAuthenticationConverter jwtAuthenticationConverterForKeycloak() {
         Converter<Jwt, Collection<GrantedAuthority>> jwtGrantedAuthoritiesConverter = jwt -> {
             Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
-
-            if (resourceAccess == null) {
-                Map<String, Object> realmAccess = jwt.getClaim("realm_access");
-                if (realmAccess != null && realmAccess.containsKey("roles")) {
-                    @SuppressWarnings("unchecked")
-                    List<String> realmRoles = (List<String>) realmAccess.get("roles");
-                    return realmRoles.stream()
-                            .map(SimpleGrantedAuthority::new)
-                            .collect(Collectors.toList());
-                }
-                return List.of(new SimpleGrantedAuthority("USER"));
-            }
-
             Object client = resourceAccess.get(clientId);
+
             if (client == null)
                 return List.of();
+
 
             @SuppressWarnings("unchecked")
             LinkedTreeMap<String, List<String>> clientRoleMap = (LinkedTreeMap<String, List<String>>) client;
 
             List<String> clientRoles = new ArrayList<>(clientRoleMap.get("roles"));
+
 
             return clientRoles.stream()
                     .map(SimpleGrantedAuthority::new)

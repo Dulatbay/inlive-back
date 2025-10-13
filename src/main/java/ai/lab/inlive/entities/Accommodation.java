@@ -35,11 +35,13 @@ public class Accommodation extends AbstractEntity<Long> {
     @Column(name = "is_approved", nullable = false)
     private Boolean approved;
 
-    // fk - to User entity
-    private String approvedBy;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by")
+    private User approvedBy;
 
-    // fk - to User entity
-    private String ownerId;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private User ownerId;
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AccImages> images = new ArrayList<>();

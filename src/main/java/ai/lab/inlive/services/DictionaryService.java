@@ -1,26 +1,25 @@
 package ai.lab.inlive.services;
 
+import ai.lab.inlive.dto.params.DictionarySearchParams;
 import ai.lab.inlive.dto.request.DictionaryCreateRequest;
-import ai.lab.inlive.dto.request.DictionaryFilterRequest;
 import ai.lab.inlive.dto.request.DictionaryUpdateRequest;
-import ai.lab.inlive.dto.response.DictionaryListResponse;
 import ai.lab.inlive.dto.response.DictionaryResponse;
 import jakarta.transaction.Transactional;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface DictionaryService {
 
-    DictionaryResponse createDictionary(DictionaryCreateRequest request);
+    void createDictionary(DictionaryCreateRequest request);
 
     DictionaryResponse getDictionaryById(Long id);
 
-    List<DictionaryResponse> getAllDictionaries();
+    Page<DictionaryResponse> getAllDictionaries(Pageable pageable);
 
-    DictionaryListResponse getDictionariesWithFilters(DictionaryFilterRequest filterRequest);
+    Page<DictionaryResponse> searchWithParams(DictionarySearchParams dictionarySearchParams, Pageable pageable);
 
     @Transactional
-    DictionaryResponse updateDictionary(Long id, DictionaryUpdateRequest request);
+    void updateDictionary(Long id, DictionaryUpdateRequest request);
 
     @Transactional
     void deleteDictionary(Long id);

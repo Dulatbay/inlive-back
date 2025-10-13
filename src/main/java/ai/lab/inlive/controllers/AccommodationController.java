@@ -1,9 +1,7 @@
 package ai.lab.inlive.controllers;
 
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
-import ai.lab.inlive.dto.request.AccommodationFilterRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
-import ai.lab.inlive.dto.response.AccommodationListResponse;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
 import ai.lab.inlive.services.AccommodationService;
@@ -13,13 +11,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+// todo: доработать контроллер
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -31,11 +29,12 @@ public class AccommodationController {
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать размещение", description = "Создание нового размещения")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccommodationResponse> createAccommodation(
+    public ResponseEntity<Void> createAccommodation(
             @RequestBody @Valid AccommodationCreateRequest request) {
         log.info("Creating accommodation: {}", request.getName());
         AccommodationResponse response = accommodationService.createAccommodation(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+//        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Получить размещение по ID", description = "Получение размещения по идентификатору")
@@ -56,29 +55,30 @@ public class AccommodationController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Поиск размещений с фильтрами", description = "Поиск размещений с применением фильтров и пагинацией")
-    @GetMapping("/search")
-    public ResponseEntity<AccommodationListResponse> searchAccommodations(
-            @Parameter(description = "ID города") @RequestParam(required = false) Long cityId,
-            @Parameter(description = "ID района") @RequestParam(required = false) Long districtId,
-            @Parameter(description = "Статус одобрения") @RequestParam(required = false) Boolean approved,
-            @Parameter(description = "ID владельца") @RequestParam(required = false) String ownerId,
-            @Parameter(description = "Минимальный рейтинг") @RequestParam(required = false) Double minRating,
-            @Parameter(description = "Статус удаления (true - удаленные, false - активные)") @RequestParam(required = false) Boolean isDeleted,
-            @Parameter(description = "Название (поиск по части названия)") @RequestParam(required = false) String name,
-            @Parameter(description = "Номер страницы (начиная с 0)") @RequestParam(defaultValue = "0") Integer page,
-            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
-            @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "id") String sortBy,
-            @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
-
-        AccommodationFilterRequest filterRequest = new AccommodationFilterRequest(
-                cityId, districtId, approved, ownerId, minRating, isDeleted, name,
-                page, size, sortBy, sortDirection);
-
-        log.info("Searching accommodations with filters: {}", filterRequest);
-        AccommodationListResponse response = accommodationService.getAccommodationsWithFilters(filterRequest);
-        return ResponseEntity.ok(response);
-    }
+//    @Operation(summary = "Поиск размещений с фильтрами", description = "Поиск размещений с применением фильтров и пагинацией")
+//    @GetMapping("/search")
+//    public ResponseEntity<PaginatedResponse<AccommodationResponse>> searchAccommodations(
+//            @Parameter(description = "ID города") @RequestParam(required = false) Long cityId,
+//            @Parameter(description = "ID района") @RequestParam(required = false) Long districtId,
+//            @Parameter(description = "Статус одобрения") @RequestParam(required = false) Boolean approved,
+//            @Parameter(description = "ID владельца") @RequestParam(required = false) String ownerId,
+//            @Parameter(description = "Минимальный рейтинг") @RequestParam(required = false) Double minRating,
+//            @Parameter(description = "Статус удаления (true - удаленные, false - активные)") @RequestParam(required = false) Boolean isDeleted,
+//            @Parameter(description = "Название (поиск по части названия)") @RequestParam(required = false) String name,
+//            @Parameter(description = "Номер страницы (начиная с 0)") @RequestParam(defaultValue = "0") Integer page,
+//            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
+//            @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "id") String sortBy,
+//            @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
+//
+//        AccommodationFilterRequest filterRequest = new AccommodationFilterRequest(
+//                cityId, districtId, approved, ownerId, minRating, isDeleted, name,
+//                page, size, sortBy, sortDirection);
+//
+//        log.info("Searching accommodations with filters: {}", filterRequest);
+//        Page<AccommodationResponse> accommodationResponsePage = accommodationService.getAccommodationsWithFilters(filterRequest);
+//        PaginatedResponse<AccommodationListResponse> response = new PaginatedResponse<>(accommodationResponsePage);
+//        return ResponseEntity.ok(response);
+//    }
 
     @Operation(summary = "Обновить размещение", description = "Обновление данных размещения")
     @PutMapping("/{id}")

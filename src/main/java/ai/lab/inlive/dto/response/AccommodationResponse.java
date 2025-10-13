@@ -1,7 +1,6 @@
 package ai.lab.inlive.dto.response;
 
 import lombok.Data;
-import java.time.LocalDateTime;
 
 @Data
 public class AccommodationResponse {
@@ -15,8 +14,6 @@ public class AccommodationResponse {
     private String description;
     private Double rating;
     private Boolean approved;
-    private String approvedBy;
-    private String ownerId;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private Long approvedBy;
+    private Long ownerId;
 }

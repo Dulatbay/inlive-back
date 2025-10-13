@@ -1,9 +1,7 @@
 package ai.lab.inlive.services;
 
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
-import ai.lab.inlive.dto.request.AccommodationFilterRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
-import ai.lab.inlive.dto.response.AccommodationListResponse;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import jakarta.transaction.Transactional;
 
@@ -16,8 +14,6 @@ public interface AccommodationService {
     AccommodationResponse getAccommodationById(Long id);
 
     List<AccommodationResponse> getAllAccommodations();
-
-    AccommodationListResponse getAccommodationsWithFilters(AccommodationFilterRequest filterRequest);
 
     @Transactional
     AccommodationResponse updateAccommodation(Long id, AccommodationUpdateRequest request);

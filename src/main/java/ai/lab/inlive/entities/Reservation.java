@@ -10,8 +10,9 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "reservation")
 public class Reservation extends AbstractEntity<Long> {
-    @Column(name = "client_id", length = 64)
-    private String clientId;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_id")
+    private User approvedBy;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "acc_unit_id")

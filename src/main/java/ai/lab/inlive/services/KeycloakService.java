@@ -1,7 +1,6 @@
 package ai.lab.inlive.services;
 
 import ai.lab.inlive.dto.request.UpdatePasswordRequest;
-import ai.lab.inlive.dto.request.UserRegistrationRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
@@ -25,11 +24,11 @@ public interface KeycloakService {
 
     List<UserRepresentation> getAllUsers();
 
-    List<UserRepresentation> getAllUsersByRole(KeycloakRole keycloakRole);
+//    List<UserRepresentation> getAllUsersByRole(KeycloakRole keycloakRole);
 
     UserResource getUserById(String id);
 
-    UserResource updateUser(KeycloakBaseUser keycloakBaseUser);
+//    UserResource updateUser(KeycloakBaseUser keycloakBaseUser);
 
-    void updatePassword(String keycloakId, UpdatePasswordRequest updatePassword);
+//    void updatePassword(String keycloakId, UpdatePasswordRequest updatePassword);
 }

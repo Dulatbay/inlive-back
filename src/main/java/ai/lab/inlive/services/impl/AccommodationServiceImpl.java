@@ -1,24 +1,20 @@
 package ai.lab.inlive.services.impl;
 
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
-import ai.lab.inlive.dto.request.AccommodationFilterRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
-import ai.lab.inlive.dto.response.AccommodationListResponse;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import ai.lab.inlive.entities.Accommodation;
 import ai.lab.inlive.entities.City;
 import ai.lab.inlive.entities.District;
+import ai.lab.inlive.entities.User;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
+import ai.lab.inlive.mappers.AccommodationMapper;
 import ai.lab.inlive.repositories.AccommodationRepository;
 import ai.lab.inlive.services.AccommodationService;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +27,7 @@ import java.util.stream.Collectors;
 public class AccommodationServiceImpl implements AccommodationService {
 
     private final AccommodationRepository accommodationRepository;
+    private final AccommodationMapper mapper;
     private final EntityManager entityManager;
 
     @Override
@@ -40,6 +37,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         City city = entityManager.getReference(City.class, request.getCityId());
         District district = entityManager.getReference(District.class, request.getDistrictId());
+        User owner = entityManager.getReference(User.class, Long.valueOf(request.getOwnerId()));
 
         Accommodation accommodation = new Accommodation();
         accommodation.setCity(city);
@@ -47,14 +45,14 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodation.setAddress(request.getAddress());
         accommodation.setName(request.getName());
         accommodation.setDescription(request.getDescription());
-        accommodation.setOwnerId(request.getOwnerId());
+        accommodation.setOwnerId(owner);
         accommodation.setApproved(false);
         accommodation.setRating(0.0);
 
         Accommodation saved = accommodationRepository.save(accommodation);
         log.info("Successfully created accommodation with ID: {}", saved.getId());
 
-        return mapToResponse(saved);
+        return mapper.toDto(saved);
     }
 
     @Override
@@ -62,7 +60,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Fetching accommodation by ID: {}", id);
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
-        return mapToResponse(accommodation);
+        return mapper.toDto(accommodation);
     }
 
     @Override
@@ -70,39 +68,8 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Fetching all accommodations");
         List<Accommodation> accommodations = accommodationRepository.findAllByIsDeletedFalse();
         return accommodations.stream()
-                .map(this::mapToResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public AccommodationListResponse getAccommodationsWithFilters(AccommodationFilterRequest filterRequest) {
-        log.info("Fetching accommodations with filters: {}", filterRequest);
-
-        Sort sort = Sort.by(Sort.Direction.fromString(filterRequest.getSortDirection()), filterRequest.getSortBy());
-        Pageable pageable = PageRequest.of(filterRequest.getPage(), filterRequest.getSize(), sort);
-
-        Page<Accommodation> accommodationsPage = accommodationRepository.findWithFilters(
-                filterRequest.getCityId(),
-                filterRequest.getDistrictId(),
-                filterRequest.getApproved(),
-                filterRequest.getOwnerId(),
-                filterRequest.getMinRating(),
-                filterRequest.getIsDeleted(),
-                filterRequest.getName(),
-                pageable
-        );
-
-        List<AccommodationResponse> accommodations = accommodationsPage.getContent().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-
-        AccommodationListResponse response = new AccommodationListResponse();
-        response.setAccommodations(accommodations);
-        response.setTotalPages(accommodationsPage.getTotalPages());
-        response.setTotalElements(accommodationsPage.getTotalElements());
-        response.setCurrentPage(accommodationsPage.getNumber());
-        response.setPageSize(accommodationsPage.getSize());
-        return response;
     }
 
     @Override
@@ -138,7 +105,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation updated = accommodationRepository.save(accommodation);
         log.info("Successfully updated accommodation with ID: {}", id);
 
-        return mapToResponse(updated);
+        return mapper.toDto(updated);
     }
 
     @Override
@@ -172,13 +139,14 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
+        User approver = entityManager.getReference(User.class, Long.valueOf(approvedBy));
         accommodation.setApproved(true);
-        accommodation.setApprovedBy(approvedBy);
+        accommodation.setApprovedBy(approver);
 
         Accommodation approved = accommodationRepository.save(accommodation);
         log.info("Successfully approved accommodation with ID: {}", id);
 
-        return mapToResponse(approved);
+        return mapper.toDto(approved);
     }
 
     @Override
@@ -195,15 +163,15 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation rejected = accommodationRepository.save(accommodation);
         log.info("Successfully rejected accommodation with ID: {}", id);
 
-        return mapToResponse(rejected);
+        return mapper.toDto(rejected);
     }
 
     @Override
     public List<AccommodationResponse> getAccommodationsByOwner(String ownerId) {
         log.info("Fetching accommodations for owner: {}", ownerId);
-        List<Accommodation> accommodations = accommodationRepository.findByOwnerIdAndIsDeletedFalse(ownerId);
+        List<Accommodation> accommodations = accommodationRepository.findByOwnerIdIdAndIsDeletedFalse(Long.valueOf(ownerId));
         return accommodations.stream()
-                .map(this::mapToResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -212,7 +180,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Fetching pending accommodations");
         List<Accommodation> accommodations = accommodationRepository.findByApprovedAndIsDeletedFalse(false);
         return accommodations.stream()
-                .map(this::mapToResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -221,26 +189,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Fetching approved accommodations");
         List<Accommodation> accommodations = accommodationRepository.findByApprovedAndIsDeletedFalse(true);
         return accommodations.stream()
-                .map(this::mapToResponse)
+                .map(mapper::toDto)
                 .collect(Collectors.toList());
-    }
-
-    private AccommodationResponse mapToResponse(Accommodation accommodation) {
-        AccommodationResponse response = new AccommodationResponse();
-        response.setId(accommodation.getId());
-        response.setCityId(accommodation.getCity().getId());
-        response.setCityName(accommodation.getCity().getName());
-        response.setDistrictId(accommodation.getDistrict().getId());
-        response.setDistrictName(accommodation.getDistrict().getName());
-        response.setAddress(accommodation.getAddress());
-        response.setName(accommodation.getName());
-        response.setDescription(accommodation.getDescription());
-        response.setRating(accommodation.getRating());
-        response.setApproved(accommodation.getApproved());
-        response.setApprovedBy(accommodation.getApprovedBy());
-        response.setOwnerId(accommodation.getOwnerId());
-        response.setCreatedAt(accommodation.getCreatedAt());
-        response.setUpdatedAt(accommodation.getUpdatedAt());
-        return response;
     }
 }
