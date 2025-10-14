@@ -24,11 +24,11 @@ public interface KeycloakService {
 
     List<UserRepresentation> getAllUsers();
 
-//    List<UserRepresentation> getAllUsersByRole(KeycloakRole keycloakRole);
+    List<UserRepresentation> getAllUsersByRole(KeycloakRole keycloakRole);
 
     UserResource getUserById(String id);
 
-//    UserResource updateUser(KeycloakBaseUser keycloakBaseUser);
+    UserResource updateUser(KeycloakBaseUser keycloakBaseUser);
 
-//    void updatePassword(String keycloakId, UpdatePasswordRequest updatePassword);
+    void updatePassword(String keycloakId, UpdatePasswordRequest updatePassword);
 }
