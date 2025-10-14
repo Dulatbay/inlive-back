@@ -75,7 +75,15 @@ public class KeycloakServiceImpl implements KeycloakService {
             user.setKeycloakId(userId);
             user.setFirstName(baseUser.getFirstName());
             user.setLastName(baseUser.getLastName());
-            userRepository.save(user);
+            user.setEmail(baseUser.getEmail());
+            user.setUsername(baseUser.getUsername());
+
+            try {
+                userRepository.save(user);
+            } catch (Exception e) {
+                log.error("Failed to save user in the database: {}", user, e);
+                throw new IllegalStateException("Failed to save user in the database.", e);
+            }
 
             return userResource.toRepresentation();
         } catch (Exception e) {

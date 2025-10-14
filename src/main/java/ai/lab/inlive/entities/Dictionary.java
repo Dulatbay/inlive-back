@@ -14,8 +14,6 @@ public class Dictionary extends AbstractEntity<Long> {
     @Column(nullable = false)
     private DictionaryKey key;
 
-    // todo: create paginated response(base class for extends) for some queries (KZH, WONDER)
-
     @Column(nullable = false)
     private String value;
 }

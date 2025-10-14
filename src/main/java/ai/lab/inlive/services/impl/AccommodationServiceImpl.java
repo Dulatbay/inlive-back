@@ -1,5 +1,6 @@
 package ai.lab.inlive.services.impl;
 
+import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
@@ -10,11 +11,15 @@ import ai.lab.inlive.entities.User;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.mappers.AccommodationMapper;
 import ai.lab.inlive.repositories.AccommodationRepository;
+import ai.lab.inlive.repositories.CityRepository;
+import ai.lab.inlive.repositories.DistrictRepository;
+import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.services.AccommodationService;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -28,16 +33,21 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     private final AccommodationRepository accommodationRepository;
     private final AccommodationMapper mapper;
-    private final EntityManager entityManager;
+    private final CityRepository cityRepository;
+    private final DistrictRepository districtRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Transactional
-    public AccommodationResponse createAccommodation(AccommodationCreateRequest request) {
+    public void createAccommodation(AccommodationCreateRequest request) {
         log.info("Creating accommodation with name: {}", request.getName());
 
-        City city = entityManager.getReference(City.class, request.getCityId());
-        District district = entityManager.getReference(District.class, request.getDistrictId());
-        User owner = entityManager.getReference(User.class, Long.valueOf(request.getOwnerId()));
+        City city = cityRepository.findById(request.getCityId())
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
+        District district = districtRepository.findById(request.getDistrictId())
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", "District not found with ID: " + request.getDistrictId()));
+        User owner = userRepository.findById(Long.valueOf(request.getOwnerId()))
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with ID: " + request.getOwnerId()));
 
         Accommodation accommodation = new Accommodation();
         accommodation.setCity(city);
@@ -49,10 +59,8 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodation.setApproved(false);
         accommodation.setRating(0.0);
 
-        Accommodation saved = accommodationRepository.save(accommodation);
-        log.info("Successfully created accommodation with ID: {}", saved.getId());
-
-        return mapper.toDto(saved);
+        accommodationRepository.save(accommodation);
+        log.info("Successfully created accommodation with ID: {}", accommodation.getId());
     }
 
     @Override
@@ -64,29 +72,48 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public List<AccommodationResponse> getAllAccommodations() {
+    public Page<AccommodationResponse> getAllAccommodations(Pageable pageable) {
         log.info("Fetching all accommodations");
-        List<Accommodation> accommodations = accommodationRepository.findAllByIsDeletedFalse();
-        return accommodations.stream()
-                .map(mapper::toDto)
-                .collect(Collectors.toList());
+        var accommodations = accommodationRepository.findAllByIsDeletedFalse(pageable);
+
+        return accommodations.map(mapper::toDto);
+    }
+
+    @Override
+    public Page<AccommodationResponse> searchWithParams(AccommodationSearchParams accommodationSearchParams, Pageable pageable) {
+        log.info("Searching accommodations with params: {}", accommodationSearchParams);
+
+        var accommodations = accommodationRepository.findWithFilters(
+                accommodationSearchParams.getCityId(),
+                accommodationSearchParams.getDistrictId(),
+                accommodationSearchParams.getApproved(),
+                accommodationSearchParams.getOwnerId(),
+                accommodationSearchParams.getMinRating(),
+                accommodationSearchParams.getIsDeleted(),
+                accommodationSearchParams.getName(),
+                pageable
+        );
+
+        return accommodations.map(mapper::toDto);
     }
 
     @Override
     @Transactional
-    public AccommodationResponse updateAccommodation(Long id, AccommodationUpdateRequest request) {
+    public void updateAccommodation(Long id, AccommodationUpdateRequest request) {
         log.info("Updating accommodation with ID: {}", id);
 
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
         if (request.getCityId() != null) {
-            City city = entityManager.getReference(City.class, request.getCityId());
+            City city = cityRepository.findById(request.getCityId())
+                    .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
             accommodation.setCity(city);
         }
 
         if (request.getDistrictId() != null) {
-            District district = entityManager.getReference(District.class, request.getDistrictId());
+            District district = districtRepository.findById(request.getDistrictId())
+                    .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", "District not found with ID: " + request.getDistrictId()));
             accommodation.setDistrict(district);
         }
 
@@ -102,10 +129,8 @@ public class AccommodationServiceImpl implements AccommodationService {
             accommodation.setDescription(request.getDescription());
         }
 
-        Accommodation updated = accommodationRepository.save(accommodation);
+        accommodationRepository.save(accommodation);
         log.info("Successfully updated accommodation with ID: {}", id);
-
-        return mapper.toDto(updated);
     }
 
     @Override
@@ -139,7 +164,8 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
-        User approver = entityManager.getReference(User.class, Long.valueOf(approvedBy));
+        User approver = userRepository.findById(Long.valueOf(approvedBy))
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with ID: " + approvedBy));
         accommodation.setApproved(true);
         accommodation.setApprovedBy(approver);
 

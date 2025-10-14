@@ -18,8 +18,8 @@ public class User extends AbstractEntity<Long> {
     @Column(unique = true, nullable = false)
     private String email;
 
-    @Column(name = "phone_number", nullable = false)
-    private String phoneNumber;
+//    @Column(name = "phone_number", nullable = false)
+//    private String phoneNumber;
 
     @Column(name = "keycloak_id", unique = true, nullable = false)
     private String keycloakId;

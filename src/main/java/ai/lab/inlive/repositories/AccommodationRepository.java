@@ -16,8 +16,6 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     Optional<Accommodation> findByIdAndIsDeletedFalse(Long id);
 
-    List<Accommodation> findAllByIsDeletedFalse();
-
     Page<Accommodation> findAllByIsDeletedFalse(Pageable pageable);
 
     List<Accommodation> findByApprovedAndIsDeletedFalse(Boolean approved);
@@ -45,7 +43,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
             @Param("cityId") Long cityId,
             @Param("districtId") Long districtId,
             @Param("approved") Boolean approved,
-            @Param("ownerId") String ownerId,
+            @Param("ownerId") Long ownerId,
             @Param("minRating") Double minRating,
             @Param("isDeleted") Boolean isDeleted,
             @Param("name") String name,
