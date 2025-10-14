@@ -77,6 +77,7 @@ public class KeycloakServiceImpl implements KeycloakService {
             user.setLastName(baseUser.getLastName());
             user.setEmail(baseUser.getEmail());
             user.setUsername(baseUser.getUsername());
+            user.setPhoneNumber(baseUser.getPhoneNumber());
 
             try {
                 userRepository.save(user);

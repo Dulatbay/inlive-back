@@ -63,7 +63,11 @@ public class AccommodationController {
         log.info("Fetching all accommodations with pagination - page: {}, size: {}, sortBy: {}, sortDirection: {}",
                 page, size, sortBy, sortDirection);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy, String.valueOf("desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC)));
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
         Page<AccommodationResponse> response = accommodationService.getAllAccommodations(pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
@@ -79,7 +83,11 @@ public class AccommodationController {
         log.info("Searching accommodations with filters - page: {}, size: {}, sortBy: {}, sortDirection: {}, filters: {}",
                 page, size, sortBy, sortDirection, accommodationSearchParams);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy, String.valueOf("desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC)));
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
         Page<AccommodationResponse> response = accommodationService.searchWithParams(accommodationSearchParams, pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }

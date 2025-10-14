@@ -25,7 +25,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
     @Query(value = "SELECT * FROM accommodations a WHERE 1=1 " +
            "AND (:cityId IS NULL OR a.city_id = :cityId) " +
            "AND (:districtId IS NULL OR a.district_id = :districtId) " +
-           "AND (:approved IS NULL OR a.approved = :approved) " +
+           "AND (:approved IS NULL OR a.is_approved = :approved) " +
            "AND (:ownerId IS NULL OR a.owner_id = :ownerId) " +
            "AND (:minRating IS NULL OR a.rating >= :minRating) " +
            "AND (:isDeleted IS NULL OR a.is_deleted = :isDeleted) " +
@@ -33,7 +33,7 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
            countQuery = "SELECT COUNT(*) FROM accommodations a WHERE 1=1 " +
            "AND (:cityId IS NULL OR a.city_id = :cityId) " +
            "AND (:districtId IS NULL OR a.district_id = :districtId) " +
-           "AND (:approved IS NULL OR a.approved = :approved) " +
+           "AND (:approved IS NULL OR a.is_approved = :approved) " +
            "AND (:ownerId IS NULL OR a.owner_id = :ownerId) " +
            "AND (:minRating IS NULL OR a.rating >= :minRating) " +
            "AND (:isDeleted IS NULL OR a.is_deleted = :isDeleted) " +

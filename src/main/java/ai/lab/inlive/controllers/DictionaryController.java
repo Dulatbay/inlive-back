@@ -61,7 +61,11 @@ public class DictionaryController {
         log.info("Fetching all dictionaries with pagination - page: {}, size: {}, sortBy: {}, sortDirection: {}",
                 page, size, sortBy, sortDirection);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy, String.valueOf("desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC)));
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
         Page<DictionaryResponse> response = dictionaryService.getAllDictionaries(pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
@@ -77,7 +81,11 @@ public class DictionaryController {
         log.info("Searching dictionaries with filters: {}, page: {}, size: {}, sortBy: {}, sortDirection: {}",
                 dictionarySearchParams, page, size, sortBy, sortDirection);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy, String.valueOf("desc".equalsIgnoreCase(sortDirection) ? Sort.Direction.DESC : Sort.Direction.ASC)));
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
         Page<DictionaryResponse> response = dictionaryService.searchWithParams(dictionarySearchParams, pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }

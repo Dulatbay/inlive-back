@@ -11,4 +11,5 @@ public class KeycloakBaseUser {
     private String username;
     private String email;
     private String password;
+    private String phoneNumber;
 }

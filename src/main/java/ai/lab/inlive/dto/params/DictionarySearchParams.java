@@ -5,9 +5,6 @@ import lombok.Data;
 
 @Data
 public class DictionarySearchParams {
-    @Parameter(description = "Тип справочника")
-    private String type;
-
     @Parameter(description = "Статус удаления (true - удаленные, false - активные)")
     private Boolean isDeleted;
 

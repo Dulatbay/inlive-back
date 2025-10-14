@@ -63,7 +63,6 @@ public class DictionaryServiceImpl implements DictionaryService {
         log.info("Searching dictionaries with params: {}", dictionarySearchParams);
 
         var dictionaries = dictionaryRepository.findWithFilters(
-                dictionarySearchParams.getType(),
                 dictionarySearchParams.getIsDeleted(),
                 dictionarySearchParams.getKey(),
                 dictionarySearchParams.getValue(),
