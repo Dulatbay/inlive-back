@@ -41,4 +41,9 @@ public abstract class AbstractEntity<T extends Serializable> {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now(ZONE_ID);
     }
+
+    public void softDelete() {
+        this.isDeleted = true;
+        this.updatedAt = LocalDateTime.now(ZONE_ID);
+    }
 }

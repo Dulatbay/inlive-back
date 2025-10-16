@@ -14,8 +14,6 @@ public interface DictionaryService {
 
     DictionaryResponse getDictionaryById(Long id);
 
-    Page<DictionaryResponse> getAllDictionaries(Pageable pageable);
-
     Page<DictionaryResponse> searchWithParams(DictionarySearchParams dictionarySearchParams, Pageable pageable);
 
     @Transactional

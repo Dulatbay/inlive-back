@@ -16,8 +16,6 @@ public interface AccommodationRepository extends JpaRepository<Accommodation, Lo
 
     Optional<Accommodation> findByIdAndIsDeletedFalse(Long id);
 
-    Page<Accommodation> findAllByIsDeletedFalse(Pageable pageable);
-
     List<Accommodation> findByApprovedAndIsDeletedFalse(Boolean approved);
 
     List<Accommodation> findByOwnerIdIdAndIsDeletedFalse(Long ownerId);

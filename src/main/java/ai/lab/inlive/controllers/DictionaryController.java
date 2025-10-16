@@ -51,26 +51,7 @@ public class DictionaryController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Получить все элементы справочника", description = "Получение списка всех элементов справочника")
-    @GetMapping
-    public ResponseEntity<PaginatedResponse<DictionaryResponse>> getAllDictionaries(
-            @Parameter(description = "Номер страницы (начиная с 0)") @RequestParam(defaultValue = "0") Integer page,
-            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
-            @Parameter(description = "Поле для сортировки") @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
-            @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(name = "sortDirection", defaultValue = "asc") String sortDirection) {
-        log.info("Fetching all dictionaries with pagination - page: {}, size: {}, sortBy: {}, sortDirection: {}",
-                page, size, sortBy, sortDirection);
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
-        );
-        Page<DictionaryResponse> response = dictionaryService.getAllDictionaries(pageable);
-        return ResponseEntity.ok(new PaginatedResponse<>(response));
-    }
-
-    @Operation(summary = "Поиск элементов справочника с фильтрами", description = "Поиск элементов справочника с применением фильтров и пагинацией")
+    @Operation(summary = "Получить все элементы справочника, соответствующие фильтрам", description = "Получение списка всех элементов справочника с возможностью фильтрации по параметрам")
     @GetMapping("/search")
     public ResponseEntity<PaginatedResponse<DictionaryResponse>> searchDictionaries(
             @ModelAttribute DictionarySearchParams dictionarySearchParams,

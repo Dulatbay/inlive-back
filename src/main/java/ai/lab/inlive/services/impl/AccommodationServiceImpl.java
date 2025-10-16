@@ -46,18 +46,13 @@ public class AccommodationServiceImpl implements AccommodationService {
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
         District district = districtRepository.findById(request.getDistrictId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", "District not found with ID: " + request.getDistrictId()));
-        User owner = userRepository.findById(Long.valueOf(request.getOwnerId()))
+        User owner = userRepository.findById(request.getOwnerId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with ID: " + request.getOwnerId()));
 
-        Accommodation accommodation = new Accommodation();
+        Accommodation accommodation = mapper.toEntity(request);
         accommodation.setCity(city);
         accommodation.setDistrict(district);
-        accommodation.setAddress(request.getAddress());
-        accommodation.setName(request.getName());
-        accommodation.setDescription(request.getDescription());
         accommodation.setOwnerId(owner);
-        accommodation.setApproved(false);
-        accommodation.setRating(0.0);
 
         accommodationRepository.save(accommodation);
         log.info("Successfully created accommodation with ID: {}", accommodation.getId());
@@ -69,14 +64,6 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
         return mapper.toDto(accommodation);
-    }
-
-    @Override
-    public Page<AccommodationResponse> getAllAccommodations(Pageable pageable) {
-        log.info("Fetching all accommodations");
-        var accommodations = accommodationRepository.findAllByIsDeletedFalse(pageable);
-
-        return accommodations.map(mapper::toDto);
     }
 
     @Override
@@ -141,15 +128,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
-        // Use reflection to set the isDeleted field since there's no setter
-        try {
-            java.lang.reflect.Field isDeletedField = accommodation.getClass().getSuperclass().getDeclaredField("isDeleted");
-            isDeletedField.setAccessible(true);
-            isDeletedField.set(accommodation, true);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            log.error("Error setting isDeleted field", e);
-            throw new RuntimeException("Error deleting accommodation", e);
-        }
+        accommodation.softDelete();
 
         accommodationRepository.save(accommodation);
 
@@ -193,9 +172,9 @@ public class AccommodationServiceImpl implements AccommodationService {
     }
 
     @Override
-    public List<AccommodationResponse> getAccommodationsByOwner(String ownerId) {
+    public List<AccommodationResponse> getAccommodationsByOwner(Long ownerId) {
         log.info("Fetching accommodations for owner: {}", ownerId);
-        List<Accommodation> accommodations = accommodationRepository.findByOwnerIdIdAndIsDeletedFalse(Long.valueOf(ownerId));
+        var accommodations = accommodationRepository.findByOwnerIdIdAndIsDeletedFalse(ownerId);
         return accommodations.stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());

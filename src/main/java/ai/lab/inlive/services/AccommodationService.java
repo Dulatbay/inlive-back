@@ -16,8 +16,6 @@ public interface AccommodationService {
 
     AccommodationResponse getAccommodationById(Long id);
 
-    Page<AccommodationResponse> getAllAccommodations(Pageable pageable);
-
     Page<AccommodationResponse> searchWithParams(AccommodationSearchParams accommodationSearchParams, Pageable pageable);
 
     @Transactional
@@ -32,7 +30,7 @@ public interface AccommodationService {
     @Transactional
     AccommodationResponse rejectAccommodation(Long id);
 
-    List<AccommodationResponse> getAccommodationsByOwner(String ownerId);
+    List<AccommodationResponse> getAccommodationsByOwner(Long ownerId);
 
     List<AccommodationResponse> getPendingAccommodations();
 

@@ -17,20 +17,22 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
 
     Optional<Dictionary> findByIdAndIsDeletedFalse(Long id);
 
-    Page<Dictionary> findAllByIsDeletedFalse(Pageable pageable);
-
-    @Query(value = "SELECT * FROM dictionaries d WHERE 1=1 " +
+    @Query(value = "SELECT * FROM dictionaries d WHERE TRUE " +
            "AND (:isDeleted IS NULL OR d.is_deleted = :isDeleted) " +
-           "AND (:key IS NULL OR UPPER(d.key::text) LIKE UPPER('%' || :key || '%')) " +
+           "AND (:keys IS NULL OR array_length(CAST(:keys AS text[]), 1) IS NULL OR " +
+           "     EXISTS (SELECT 1 FROM unnest(CAST(:keys AS text[])) AS key_item " +
+           "             WHERE UPPER(d.key::text) LIKE UPPER('%' || key_item || '%'))) " +
            "AND (:value IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || :value || '%'))",
-           countQuery = "SELECT COUNT(*) FROM dictionaries d WHERE 1=1 " +
+           countQuery = "SELECT COUNT(*) FROM dictionaries d WHERE TRUE " +
            "AND (:isDeleted IS NULL OR d.is_deleted = :isDeleted) " +
-           "AND (:key IS NULL OR UPPER(d.key::text) LIKE UPPER('%' || :key || '%')) " +
+           "AND (:keys IS NULL OR array_length(CAST(:keys AS text[]), 1) IS NULL OR " +
+           "     EXISTS (SELECT 1 FROM unnest(CAST(:keys AS text[])) AS key_item " +
+           "             WHERE UPPER(d.key::text) LIKE UPPER('%' || key_item || '%'))) " +
            "AND (:value IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || :value || '%'))",
            nativeQuery = true)
     Page<Dictionary> findWithFilters(
             @Param("isDeleted") Boolean isDeleted,
-            @Param("key") String key,
+            @Param("keys") String[] keys,
             @Param("value") String value,
             Pageable pageable
     );

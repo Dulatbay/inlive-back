@@ -51,20 +51,12 @@ public class DictionaryServiceImpl implements DictionaryService {
     }
 
     @Override
-    public Page<DictionaryResponse> getAllDictionaries(Pageable pageable) {
-        log.info("Fetching all dictionaries");
-        var dictionaries = dictionaryRepository.findAllByIsDeletedFalse(pageable);
-
-        return dictionaries.map(mapper::toDto);
-    }
-
-    @Override
     public Page<DictionaryResponse> searchWithParams(DictionarySearchParams dictionarySearchParams, Pageable pageable) {
         log.info("Searching dictionaries with params: {}", dictionarySearchParams);
 
         var dictionaries = dictionaryRepository.findWithFilters(
                 dictionarySearchParams.getIsDeleted(),
-                dictionarySearchParams.getKey(),
+                dictionarySearchParams.getKeys(),
                 dictionarySearchParams.getValue(),
                 pageable
         );
@@ -107,15 +99,7 @@ public class DictionaryServiceImpl implements DictionaryService {
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
 
-        // Use reflection to set the isDeleted field since there's no setter
-        try {
-            java.lang.reflect.Field isDeletedField = dictionary.getClass().getSuperclass().getDeclaredField("isDeleted");
-            isDeletedField.setAccessible(true);
-            isDeletedField.set(dictionary, true);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            log.error("Error setting isDeleted field", e);
-            throw new RuntimeException("Error deleting dictionary", e);
-        }
+        dictionary.softDelete();
 
         dictionaryRepository.save(dictionary);
 

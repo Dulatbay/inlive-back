@@ -7,6 +7,7 @@ import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
 import ai.lab.inlive.services.AccommodationService;
+import ai.lab.inlive.constants.Utils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,6 +21,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,27 +55,7 @@ public class AccommodationController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Получить все размещения", description = "Получение списка всех размещений")
-    @GetMapping
-    public ResponseEntity<PaginatedResponse<AccommodationResponse>> getAllAccommodations(
-            @Parameter(description = "Номер страницы (начиная с 0)") @RequestParam(defaultValue = "0") Integer page,
-            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
-            @Parameter(description = "Поле для сортировки") @RequestParam(name = "sortBy", defaultValue = "id") String sortBy,
-            @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(name = "sortDirection", defaultValue = "asc") String sortDirection
-    ) {
-        log.info("Fetching all accommodations with pagination - page: {}, size: {}, sortBy: {}, sortDirection: {}",
-                page, size, sortBy, sortDirection);
-
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
-        );
-        Page<AccommodationResponse> response = accommodationService.getAllAccommodations(pageable);
-        return ResponseEntity.ok(new PaginatedResponse<>(response));
-    }
-
-    @Operation(summary = "Поиск размещений с фильтрами", description = "Поиск размещений с применением фильтров и пагинацией")
+    @Operation(summary = "Получить все размещения, соответствующие фильтрам", description = "Получение списка размещений с возможностью фильтрации")
     @GetMapping("/search")
     public ResponseEntity<PaginatedResponse<AccommodationResponse>> searchAccommodations(
             @ModelAttribute AccommodationSearchParams accommodationSearchParams,
@@ -117,11 +100,11 @@ public class AccommodationController {
     @PostMapping("/{id}/approve")
     public ResponseEntity<AccommodationResponse> approveAccommodation(
             @Parameter(description = "ID размещения", example = "1")
-            @PathVariable Long id,
-            @Parameter(description = "ID пользователя, который одобряет")
-            @RequestParam String approvedBy) {
-        log.info("Approving accommodation with ID: {} by: {}", id, approvedBy);
-        AccommodationResponse response = accommodationService.approveAccommodation(id, approvedBy);
+            @PathVariable Long id) {
+        var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var approvedByUserId = Utils.extractIdFromToken(token);
+        log.info("Approving accommodation with ID: {} by user: {}", id, approvedByUserId);
+        AccommodationResponse response = accommodationService.approveAccommodation(id, approvedByUserId);
         return ResponseEntity.ok(response);
     }
 
@@ -139,7 +122,7 @@ public class AccommodationController {
     @GetMapping("/owner/{ownerId}")
     public ResponseEntity<List<AccommodationResponse>> getAccommodationsByOwner(
             @Parameter(description = "ID владельца")
-            @PathVariable String ownerId) {
+            @PathVariable Long ownerId) {
         log.info("Fetching accommodations for owner: {}", ownerId);
         List<AccommodationResponse> response = accommodationService.getAccommodationsByOwner(ownerId);
         return ResponseEntity.ok(response);

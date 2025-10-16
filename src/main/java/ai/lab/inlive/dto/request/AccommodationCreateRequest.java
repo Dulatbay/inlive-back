@@ -24,6 +24,6 @@ public class AccommodationCreateRequest {
     @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
 
-    @NotBlank(message = "Owner ID is required")
-    private String ownerId;
+    @NotNull(message = "Owner ID is required")
+    private Long ownerId;
 }
