@@ -1,7 +1,6 @@
 package ai.lab.inlive.services;
 
 import ai.lab.inlive.dto.request.UpdatePasswordRequest;
-import ai.lab.inlive.dto.request.UserRegistrationRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakRole;

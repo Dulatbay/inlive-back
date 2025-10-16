@@ -4,10 +4,13 @@ import ai.lab.inlive.config.properties.KeycloakConfigProperties;
 import ai.lab.inlive.dto.request.UpdatePasswordRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.dto.response.KeycloakTokenResponse;
+import ai.lab.inlive.entities.User;
+import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakError;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotAuthorizedException;
@@ -46,15 +49,17 @@ public class KeycloakServiceImpl implements KeycloakService {
     private final RestTemplate restTemplate;
     private final KeycloakConfigProperties keycloakConfigProperties;
     private final MessageSource messageSource;
+    private final UserRepository userRepository;
 
     @Override
-    public UserRepresentation createUserByRole(KeycloakBaseUser sellerRegistrationRequest, KeycloakRole keycloakRole) {
-        UserRepresentation userRepresentation = setupUserRepresentation(sellerRegistrationRequest);
+    @Transactional
+    public UserRepresentation createUserByRole(KeycloakBaseUser baseUser, KeycloakRole keycloakRole) {
+        UserRepresentation userRepresentation = setupUserRepresentation(baseUser);
         String userId = null;
         try (Response response = getUsersResource().create(userRepresentation)) {
             handleUnsuccessfulResponse(response);
             userId = CreatedResponseUtil.getCreatedId(response);
-            UserResource userResource = setupUserResource(sellerRegistrationRequest, keycloakRole, userId);
+            UserResource userResource = setupUserResource(baseUser, keycloakRole, userId);
 
             if (keycloakConfigProperties.isSendEmail()) {
                 try {
@@ -63,6 +68,22 @@ public class KeycloakServiceImpl implements KeycloakService {
                     log.error("Exception: ", e);
                     throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.invalid-email", null, LocaleContextHolder.getLocale()));
                 }
+            }
+
+            // todo: create user in database
+            User user = new User();
+            user.setKeycloakId(userId);
+            user.setFirstName(baseUser.getFirstName());
+            user.setLastName(baseUser.getLastName());
+            user.setEmail(baseUser.getEmail());
+            user.setUsername(baseUser.getUsername());
+            user.setPhoneNumber(baseUser.getPhoneNumber());
+
+            try {
+                userRepository.save(user);
+            } catch (Exception e) {
+                log.error("Failed to save user in the database: {}", user, e);
+                throw new IllegalStateException("Failed to save user in the database.", e);
             }
 
             return userResource.toRepresentation();
@@ -310,6 +331,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     @Override
+    @Transactional
     public AuthResponse registerUser(KeycloakBaseUser req, KeycloakRole keycloakRole) {
         validate(req);
         this.createUserByRole(req, keycloakRole);

@@ -4,12 +4,11 @@ import lombok.Data;
 import org.slf4j.MDC;
 
 import java.time.LocalDateTime;
-import java.time.ZoneId;
+
+import static ai.lab.inlive.constants.ValueConstants.ZONE_ID;
 
 @Data
 public class ErrorResponse {
-    public static final ZoneId ZONE_ID = ZoneId.of("UTC+00:00");
-
     private String error;
 
     private String message;

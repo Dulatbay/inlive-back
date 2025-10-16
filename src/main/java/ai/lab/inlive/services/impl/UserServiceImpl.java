@@ -119,12 +119,13 @@ public class UserServiceImpl implements UserService {
                 testerUserId.set(keycloakTester.getId());
             }
 
-            var wonderUser = new User();
-            wonderUser.setKeycloakId(testerUserId.get());
-            wonderUser.setPhoneNumber("tester");
-            wonderUser.setUsername(keycloakUsername);
+            var user = new User();
+            user.setKeycloakId(testerUserId.get());
+            user.setPhoneNumber("tester");
+            user.setFirstName(keycloakUsername);
+            user.setLastName("tester");
 
-            userRepository.save(wonderUser);
+            userRepository.save(user);
             log.info("New tester created");
         }
     }
