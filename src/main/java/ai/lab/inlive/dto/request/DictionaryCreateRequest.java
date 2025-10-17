@@ -1,13 +1,14 @@
 package ai.lab.inlive.dto.request;
 
 import ai.lab.inlive.entities.enums.DictionaryKey;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class DictionaryCreateRequest {
-    @NotBlank(message = "Dictionary key is required")
+    @NotNull(message = "Dictionary key is required")
     private DictionaryKey key;
 
     @NotBlank(message = "Dictionary value is required")

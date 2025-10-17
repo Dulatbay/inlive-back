@@ -30,10 +30,8 @@ public class AccommodationUnit extends AbstractEntity<Long> {
     @Column(nullable = false)
     private Integer capacity;
 
-    @Column(nullable = false)
     private Double area;
 
-    @Column(nullable = false)
     private Integer floor;
 
     @Column(name = "is_available", nullable = false)

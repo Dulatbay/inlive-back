@@ -35,8 +35,9 @@ public class Accommodation extends AbstractEntity<Long> {
     @Column(name = "is_approved", nullable = false)
     private Boolean approved;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "approved_by")
+    // Allow null until approved
+    @ManyToOne(optional = true, fetch = FetchType.LAZY)
+    @JoinColumn(name = "approved_by", nullable = true)
     private User approvedBy;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

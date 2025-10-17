@@ -2,7 +2,7 @@ package ai.lab.inlive.repositories;
 
 import ai.lab.inlive.entities.Dictionary;
 import ai.lab.inlive.entities.enums.DictionaryKey;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,5 +37,5 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
             Pageable pageable
     );
 
-    boolean existsByKeyAndIsDeletedFalse(@NotBlank DictionaryKey key);
+    boolean existsByKeyAndIsDeletedFalse(@NotNull DictionaryKey key);
 }

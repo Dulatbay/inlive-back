@@ -25,7 +25,7 @@ public interface AccommodationMapper {
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "documents", ignore = true)
     Accommodation toEntity(AccommodationResponse dto);
-
+    
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "ownerId", ignore = true)
     @Mapping(target = "city", ignore = true)
@@ -39,7 +39,7 @@ public interface AccommodationMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Accommodation toEntity(AccommodationCreateRequest request);
-
+    
     List<AccommodationResponse> toDto(List<Accommodation> accommodations);
     List<Accommodation> toEntity(List<AccommodationResponse> dtos);
 }
