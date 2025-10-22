@@ -5,11 +5,15 @@ import ai.lab.inlive.dto.request.UpdatePasswordRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.dto.response.KeycloakTokenResponse;
 import ai.lab.inlive.entities.User;
+import ai.lab.inlive.entities.enums.TokenType;
 import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakError;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
@@ -38,6 +42,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -192,7 +197,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     @Override
-    public AuthResponse getAuthResponse(String username, String password) {
+    public AuthResponse getAuthResponse(String username, String password, HttpServletResponse response1) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             throw new BadRequestException("Username or password is empty");
         }
@@ -215,14 +220,18 @@ public class KeycloakServiceImpl implements KeycloakService {
                 String accessToken = (String) body.get("access_token");
                 String refreshToken = (String) body.get("refresh_token");
                 Integer expiresIn = (Integer) body.get("expires_in");
-                Integer refreshExpIn = (Integer) body.get("refresh_expires_in");
+                Integer refreshExpiresIn = (Integer) body.get("refresh_expires_in");
                 String tokenType = (String) body.get("token_type");
+
+                // Сохраняем refresh token в cookie
+                if (refreshToken != null) {
+                    Cookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshExpiresIn);
+                    response1.addCookie(refreshTokenCookie);
+                }
 
                 return AuthResponse.builder()
                         .accessToken(accessToken)
-                        .refreshToken(refreshToken)
                         .expiresIn(expiresIn != null ? expiresIn.longValue() : 3600L)
-                        .refreshExpiresIn(refreshExpIn != null ? refreshExpIn.longValue() : null)
                         .tokenType(tokenType != null ? tokenType : "Bearer")
                         .build();
             } else {
@@ -240,8 +249,16 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     @Override
-    public void logout(String accessToken, String refreshToken) {
+    public void logout(HttpServletRequest request1, HttpServletResponse response1) {
         String logoutUrl = buildTokenEndpoint("logout");
+
+        // Извлекаем refresh token из cookie
+        Cookie refreshTokenCookie = extractRefreshTokenCookie(request1);
+        String refreshToken = refreshTokenCookie.getValue();
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new IllegalArgumentException("Refresh token is missing or invalid during logout");
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -257,6 +274,13 @@ public class KeycloakServiceImpl implements KeycloakService {
             ResponseEntity<String> response = restTemplate.postForEntity(logoutUrl, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
+                // Удаляем cookie после успешного logout
+                Cookie deleteCookie = new Cookie(TokenType.REFRESH_TOKEN.name(), null);
+                deleteCookie.setMaxAge(0);
+                deleteCookie.setPath("/");
+                deleteCookie.setHttpOnly(true);
+                response1.addCookie(deleteCookie);
+
                 log.info("User logged out successfully");
             } else {
                 log.error("Failed to logout user: {}", response.getStatusCode());
@@ -332,10 +356,10 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     @Override
     @Transactional
-    public AuthResponse registerUser(KeycloakBaseUser req, KeycloakRole keycloakRole) {
+    public AuthResponse registerUser(KeycloakBaseUser req, KeycloakRole keycloakRole, HttpServletResponse response) {
         validate(req);
         this.createUserByRole(req, keycloakRole);
-        return this.loginAsNewUser(req.getEmail(), req.getPassword());
+        return this.loginAsNewUser(req.getEmail(), req.getPassword(), response);
     }
 
     private void validate(KeycloakBaseUser r) {
@@ -352,22 +376,33 @@ public class KeycloakServiceImpl implements KeycloakService {
         return s == null || s.isBlank();
     }
 
-    private AuthResponse loginAsNewUser(String userEmail, String userPassword) {
+    private AuthResponse loginAsNewUser(String userEmail, String userPassword, HttpServletResponse response) {
         try (var kc = this.getCurrentKeycloak(userEmail, userPassword)) {
 
             var token = kc.tokenManager().getAccessToken();
-            return new AuthResponse(
-                    token.getToken(),
-                    token.getRefreshToken(),
-                    token.getExpiresIn(),
-                    token.getRefreshExpiresIn(),
-                    token.getTokenType()
-            );
+
+            // Сохраняем refresh token в cookie
+            if (token.getRefreshToken() != null) {
+                Cookie refreshTokenCookie = buildRefreshTokenCookie(token.getRefreshToken(),
+                        (int) token.getRefreshExpiresIn());
+                response.addCookie(refreshTokenCookie);
+            }
+
+            // Возвращаем только access token, refresh token в cookie
+            return AuthResponse.builder()
+                    .accessToken(token.getToken())
+                    .expiresIn(token.getExpiresIn())
+                    .tokenType(token.getTokenType())
+                    .build();
         }
     }
 
     @Override
-    public AuthResponse refreshToken(String refreshToken) {
+    public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        // Извлекаем refresh token из cookie
+        Cookie refreshTokenCookie = extractRefreshTokenCookie(request);
+        String refreshToken = refreshTokenCookie.getValue();
+
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new IllegalArgumentException("Refresh token is required");
         }
@@ -388,13 +423,19 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             KeycloakTokenResponse body = resp.getBody();
             if (resp.getStatusCode().is2xxSuccessful() && body != null) {
-                return new AuthResponse(
-                        body.accessToken(),
-                        body.refreshToken(),
-                        body.expiresIn(),
-                        body.refreshExpiresIn(),
-                        body.tokenType()
-                );
+                // Сохраняем новый refresh token в cookie
+                if (body.refreshToken() != null) {
+                    Integer refreshExpiresIn = body.refreshExpiresIn() != null ? body.refreshExpiresIn().intValue() : null;
+                    Cookie newRefreshTokenCookie = buildRefreshTokenCookie(body.refreshToken(), refreshExpiresIn);
+                    response.addCookie(newRefreshTokenCookie);
+                }
+
+                // Возвращаем только access token, refresh token в cookie
+                return AuthResponse.builder()
+                        .accessToken(body.accessToken())
+                        .expiresIn(body.expiresIn())
+                        .tokenType(body.tokenType())
+                        .build();
             }
             throw new RuntimeException("Unexpected refresh response: " + resp.getStatusCode());
 
@@ -428,5 +469,27 @@ public class KeycloakServiceImpl implements KeycloakService {
         String base = keycloakConfigProperties.getKeycloakUrl();
         if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
         return base + "/realms/" + keycloakConfigProperties.getRealm() + "/protocol/openid-connect/" + endpointType;
+    }
+
+    private Cookie buildRefreshTokenCookie(String refreshToken, Integer refreshExpiresIn) {
+        Cookie refreshTokenCookie = new Cookie(TokenType.REFRESH_TOKEN.name(), refreshToken);
+        // Используем refreshExpiresIn если доступен, иначе по умолчанию 30 дней
+        int maxAge = (refreshExpiresIn != null && refreshExpiresIn > 0) ? refreshExpiresIn : 30 * 24 * 60 * 60;
+        refreshTokenCookie.setMaxAge(maxAge);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        return refreshTokenCookie;
+    }
+
+    private Cookie extractRefreshTokenCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            throw new IllegalArgumentException("Refresh token is missing");
+        }
+        return Arrays.stream(cookies)
+                .filter(cookie -> cookie.getName().equals(TokenType.REFRESH_TOKEN.name()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Refresh token is missing"));
     }
 }
