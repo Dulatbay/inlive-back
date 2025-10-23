@@ -9,7 +9,7 @@ public class DictionarySearchParams {
     private Boolean isDeleted;
 
     @Parameter(description = "Ключи (поиск по части ключей)")
-    private String[] keys;
+    private List<String> keys;
 
     @Parameter(description = "Значение (поиск по части значения)")
     private String value;
