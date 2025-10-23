@@ -2,7 +2,7 @@ package ai.lab.inlive.entities.enums;
 
 // todo: отрефакторить все использования toString(), исползовагние tOString как значение очень плохо лучше геттеры
 public enum TokenType {
-    ACCESS_TOKEN, REFRESH_TOKEN;
+    ACCESS_TOKEN, refreshToken;
 
     @Override
     public String toString() {

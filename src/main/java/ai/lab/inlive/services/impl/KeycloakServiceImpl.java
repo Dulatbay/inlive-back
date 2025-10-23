@@ -147,7 +147,6 @@ public class KeycloakServiceImpl implements KeycloakService {
                 .roles().get(keycloakRole.name()).toRepresentation();
     }
 
-
     private Keycloak getAdminKeycloak() {
         return KeycloakBuilder.builder()
                 .serverUrl(this.keycloakConfigProperties.getKeycloakUrl())
@@ -275,7 +274,7 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 // Удаляем cookie после успешного logout
-                Cookie deleteCookie = new Cookie(TokenType.REFRESH_TOKEN.name(), null);
+                Cookie deleteCookie = new Cookie(TokenType.refreshToken.name(), null);
                 deleteCookie.setMaxAge(0);
                 deleteCookie.setPath("/");
                 deleteCookie.setHttpOnly(true);
@@ -472,7 +471,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     private Cookie buildRefreshTokenCookie(String refreshToken, Integer refreshExpiresIn) {
-        Cookie refreshTokenCookie = new Cookie(TokenType.REFRESH_TOKEN.name(), refreshToken);
+        Cookie refreshTokenCookie = new Cookie(TokenType.refreshToken.name(), refreshToken);
         // Используем refreshExpiresIn если доступен, иначе по умолчанию 30 дней
         int maxAge = (refreshExpiresIn != null && refreshExpiresIn > 0) ? refreshExpiresIn : 30 * 24 * 60 * 60;
         refreshTokenCookie.setMaxAge(maxAge);
@@ -488,7 +487,7 @@ public class KeycloakServiceImpl implements KeycloakService {
             throw new IllegalArgumentException("Refresh token is missing");
         }
         return Arrays.stream(cookies)
-                .filter(cookie -> cookie.getName().equals(TokenType.REFRESH_TOKEN.name()))
+                .filter(cookie -> cookie.getName().equals(TokenType.refreshToken.name()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Refresh token is missing"));
     }
