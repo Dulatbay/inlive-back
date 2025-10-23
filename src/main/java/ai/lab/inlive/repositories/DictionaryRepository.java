@@ -17,42 +17,51 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
 
     Optional<Dictionary> findByIdAndIsDeletedFalse(Long id);
 
-    @Query(value = """
-        SELECT *
-        FROM dictionaries d
-        WHERE TRUE
-          AND (CAST(:isDeleted AS boolean) IS NULL OR d.is_deleted = CAST(:isDeleted AS boolean))
-          AND (
-                COALESCE(cardinality(CAST(:keys AS text[])), 0) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM unnest(CAST(:keys AS text[])) AS key_item
-                    WHERE UPPER(d.key::text) LIKE UPPER('%' || key_item || '%')
-                )
-          )
-          AND (CAST(:value AS text) IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || CAST(:value AS text) || '%'))
-        """,
+    @Query(
+        value = """
+            SELECT d.*
+            FROM dictionaries d
+            WHERE TRUE
+              -- isDeleted: либо не фильтруем (NULL), либо точное сравнение
+              AND (CAST(:isDeleted AS boolean) IS NULL OR d.is_deleted = CAST(:isDeleted AS boolean))
+
+              -- keys: если NULL или пустой массив — не фильтруем; иначе точное равенство по ключу
+              AND (
+                    COALESCE(cardinality(CAST(:keys AS text[])), 0) = 0
+                    OR EXISTS (
+                        SELECT 1
+                        FROM unnest(CAST(:keys AS text[])) AS k
+                        WHERE UPPER(d.key::text) = UPPER(k)
+                    )
+                  )
+
+              -- value: если NULL — не фильтруем; иначе LIKE по value (case-insensitive)
+              AND (CAST(:value AS text) IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || CAST(:value AS text) || '%'))
+
+            ORDER BY d.id ASC
+            """,
         countQuery = """
-        SELECT COUNT(*)
-        FROM dictionaries d
-        WHERE TRUE
-          AND (CAST(:isDeleted AS boolean) IS NULL OR d.is_deleted = CAST(:isDeleted AS boolean))
-          AND (
-                COALESCE(cardinality(CAST(:keys AS text[])), 0) = 0
-                OR EXISTS (
-                    SELECT 1
-                    FROM unnest(CAST(:keys AS text[])) AS key_item
-                    WHERE UPPER(d.key::text) LIKE UPPER('%' || key_item || '%')
-                )
-          )
-          AND (CAST(:value AS text) IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || CAST(:value AS text) || '%'))
-        """,
-        nativeQuery = true)
+            SELECT COUNT(*)
+            FROM dictionaries d
+            WHERE TRUE
+              AND (CAST(:isDeleted AS boolean) IS NULL OR d.is_deleted = CAST(:isDeleted AS boolean))
+              AND (
+                    COALESCE(cardinality(CAST(:keys AS text[])), 0) = 0
+                    OR EXISTS (
+                        SELECT 1
+                        FROM unnest(CAST(:keys AS text[])) AS k
+                        WHERE UPPER(d.key::text) = UPPER(k)
+                    )
+                  )
+              AND (CAST(:value AS text) IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || CAST(:value AS text) || '%'))
+            """,
+        nativeQuery = true
+    )
     Page<Dictionary> findWithFilters(
-            @Param("isDeleted") Boolean isDeleted,   // null или Boolean — ок
-            @Param("keys") String[] keys,            // null, [] или массив строк — ок
-            @Param("value") String value,            // null или строка — ок
-            Pageable pageable
+        @Param("isDeleted") Boolean isDeleted,   // null => не фильтруем
+        @Param("keys") String[] keys,            // null/[] => не фильтруем; иначе точное равенство по key
+        @Param("value") String value,            // null => не фильтруем; иначе LIKE по value
+        Pageable pageable
     );
 
     boolean existsByKeyAndIsDeletedFalse(@NotNull DictionaryKey key);
