@@ -54,8 +54,8 @@ public class DictionaryServiceImpl implements DictionaryService {
     public Page<DictionaryResponse> searchWithParams(DictionarySearchParams dictionarySearchParams, Pageable pageable) {
         log.info("Searching dictionaries with params: {}", dictionarySearchParams);
 
-        boolean keysProvided = p.getKeys() != null && !p.getKeys().isEmpty();
-        String[] keysArray = keysProvided ? p.getKeys().toArray(new String[0]) : null;
+        boolean keysProvided = dictionarySearchParams.getKeys() != null && !dictionarySearchParams.getKeys().isEmpty();
+        String[] keysArray = keysProvided ? dictionarySearchParams.getKeys().toArray(new String[0]) : null;
 
         var dictionaries = dictionaryRepository.findWithFilters(
                 dictionarySearchParams.getIsDeleted(),
