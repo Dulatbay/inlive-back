@@ -59,7 +59,9 @@ public class DictionaryServiceImpl implements DictionaryService {
 
         var dictionaries = dictionaryRepository.findWithFilters(
                 dictionarySearchParams.getIsDeleted(),
-                dictionarySearchParams.getKeys(),
+                // dictionarySearchParams.getKeys(),
+                 keysArray,
+                 keysProvided,
                 dictionarySearchParams.getValue(),
                 pageable
         );
