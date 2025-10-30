@@ -17,15 +17,41 @@ public class CustomCorsFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     @NotNull FilterChain filterChain) throws ServletException, IOException {
-        response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-        response.setHeader("Access-Control-Max-Age", "3600");
-        response.setHeader("Access-Control-Allow-Headers", "authorization, content-type, xsrf-token");
-        response.addHeader("Access-Control-Expose-Headers", "xsrf-token");
-        if ("OPTIONS".equals(request.getMethod())) {
-            response.setStatus(HttpServletResponse.SC_OK);
-        } else {
-            filterChain.doFilter(request, response);
+
+        String origin = request.getHeader("Origin");
+
+        if (origin != null && (
+                origin.startsWith("http://localhost:") ||
+                        origin.startsWith("https://localhost:") ||
+                        origin.startsWith("http://127.0.0.1:") ||
+                        origin.startsWith("https://127.0.0.1:") ||
+                        origin.equals("http://10.36.40.16:3000") ||
+                        origin.endsWith("your-production-domain.com")
+        )) {
+            response.setHeader("Access-Control-Allow-Origin", origin);
+            response.setHeader("Vary", "Origin");
         }
+
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+
+        String reqHeaders = request.getHeader("Access-Control-Request-Headers");
+        if (reqHeaders != null && !reqHeaders.isBlank()) {
+            response.setHeader("Access-Control-Allow-Headers", reqHeaders);
+        } else {
+            response.setHeader("Access-Control-Allow-Headers",
+                    "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-XSRF-TOKEN, X-CSRF-TOKEN");
+        }
+
+        response.setHeader("Access-Control-Expose-Headers", "Authorization, XSRF-TOKEN");
+
+        response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Max-Age", "3600");
+
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return;
+        }
+
+        filterChain.doFilter(request, response);
     }
 }

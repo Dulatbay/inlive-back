@@ -47,3 +47,8 @@ server:
     include-message: always
   port: ${PORT:8080}
   address: 0.0.0.0
+  ssl:
+    enabled: true
+    key-store: classpath:keystore.p12
+    key-store-password: password
+    key-store-type: PKCS12

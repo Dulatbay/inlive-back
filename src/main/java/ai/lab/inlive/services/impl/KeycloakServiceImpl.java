@@ -222,17 +222,14 @@ public class KeycloakServiceImpl implements KeycloakService {
                 Integer refreshExpiresIn = (Integer) body.get("refresh_expires_in");
                 String tokenType = (String) body.get("token_type");
 
-                // Сохраняем refresh token в cookie
-                if (refreshToken != null) {
-                    Cookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshExpiresIn);
-                    response1.addCookie(refreshTokenCookie);
-                }
+                Cookie refreshTokenCookie = buildRefreshTokenCookie(refreshToken, refreshExpiresIn);
+                response1.addCookie(refreshTokenCookie);
 
-                return AuthResponse.builder()
-                        .accessToken(accessToken)
-                        .expiresIn(expiresIn != null ? expiresIn.longValue() : 3600L)
-                        .tokenType(tokenType != null ? tokenType : "Bearer")
-                        .build();
+                String role = extractRoleFromToken(accessToken);
+                Cookie roleCookie = buildRoleCookie(role);
+                response1.addCookie(roleCookie);
+
+                return buildAuthResponseDto(accessToken, Long.valueOf(expiresIn), tokenType);
             } else {
                 throw new RuntimeException("Failed to get auth response: " + response.getStatusCode());
             }
@@ -251,7 +248,6 @@ public class KeycloakServiceImpl implements KeycloakService {
     public void logout(HttpServletRequest request1, HttpServletResponse response1) {
         String logoutUrl = buildTokenEndpoint("logout");
 
-        // Извлекаем refresh token из cookie
         Cookie refreshTokenCookie = extractRefreshTokenCookie(request1);
         String refreshToken = refreshTokenCookie.getValue();
 
@@ -273,12 +269,16 @@ public class KeycloakServiceImpl implements KeycloakService {
             ResponseEntity<String> response = restTemplate.postForEntity(logoutUrl, request, String.class);
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                // Удаляем cookie после успешного logout
-                Cookie deleteCookie = new Cookie(TokenType.refreshToken.name(), null);
-                deleteCookie.setMaxAge(0);
-                deleteCookie.setPath("/");
-                deleteCookie.setHttpOnly(true);
-                response1.addCookie(deleteCookie);
+                Cookie deleteRefreshTokenCookie = new Cookie(TokenType.refreshToken.name(), null);
+                deleteRefreshTokenCookie.setMaxAge(0);
+                deleteRefreshTokenCookie.setPath("/");
+                response1.addCookie(deleteRefreshTokenCookie);
+
+                // Удаляем role cookie
+                Cookie deleteRoleCookie = new Cookie("USER_ROLE", null);
+                deleteRoleCookie.setMaxAge(0);
+                deleteRoleCookie.setPath("/");
+                response1.addCookie(deleteRoleCookie);
 
                 log.info("User logged out successfully");
             } else {
@@ -304,7 +304,6 @@ public class KeycloakServiceImpl implements KeycloakService {
                 .roles().get(keycloakRole.name())
                 .getUserMembers();
     }
-
 
     @Override
     public UserResource getUserById(String id) {
@@ -387,6 +386,13 @@ public class KeycloakServiceImpl implements KeycloakService {
                 response.addCookie(refreshTokenCookie);
             }
 
+            // Сохраняем роль пользователя в cookie
+            String role = extractRoleFromToken(token.getToken());
+            if (role != null) {
+                Cookie roleCookie = buildRoleCookie(role);
+                response.addCookie(roleCookie);
+            }
+
             // Возвращаем только access token, refresh token в cookie
             return AuthResponse.builder()
                     .accessToken(token.getToken())
@@ -427,6 +433,13 @@ public class KeycloakServiceImpl implements KeycloakService {
                     Integer refreshExpiresIn = body.refreshExpiresIn() != null ? body.refreshExpiresIn().intValue() : null;
                     Cookie newRefreshTokenCookie = buildRefreshTokenCookie(body.refreshToken(), refreshExpiresIn);
                     response.addCookie(newRefreshTokenCookie);
+                }
+
+                // Сохраняем роль пользователя в cookie
+                String role = extractRoleFromToken(body.accessToken());
+                if (role != null) {
+                    Cookie roleCookie = buildRoleCookie(role);
+                    response.addCookie(roleCookie);
                 }
 
                 // Возвращаем только access token, refresh token в cookie
@@ -470,11 +483,42 @@ public class KeycloakServiceImpl implements KeycloakService {
         return base + "/realms/" + keycloakConfigProperties.getRealm() + "/protocol/openid-connect/" + endpointType;
     }
 
+    private String extractRoleFromToken(String accessToken) {
+        try {
+            String[] parts = accessToken.split("\\.");
+            if (parts.length < 2) {
+                return null;
+            }
+
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode jsonNode = mapper.readTree(payload);
+
+            com.fasterxml.jackson.databind.JsonNode resourceAccess = jsonNode.get("resource_access");
+            if (resourceAccess != null && resourceAccess.has(keycloakConfigProperties.getClientId())) {
+                com.fasterxml.jackson.databind.JsonNode clientNode = resourceAccess.get(keycloakConfigProperties.getClientId());
+                com.fasterxml.jackson.databind.JsonNode rolesNode = clientNode.get("roles");
+
+                if (rolesNode != null && rolesNode.isArray() && !rolesNode.isEmpty()) {
+                    return rolesNode.get(0).asText();
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to extract role from token: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private Cookie buildRoleCookie(String role) {
+        Cookie roleCookie = new Cookie("USER_ROLE", role);
+        roleCookie.setPath("/");
+        return roleCookie;
+    }
+
     private Cookie buildRefreshTokenCookie(String refreshToken, Integer refreshExpiresIn) {
         Cookie refreshTokenCookie = new Cookie(TokenType.refreshToken.name(), refreshToken);
-        // Используем refreshExpiresIn если доступен, иначе по умолчанию 30 дней
-        int maxAge = (refreshExpiresIn != null && refreshExpiresIn > 0) ? refreshExpiresIn : 30 * 24 * 60 * 60;
-        refreshTokenCookie.setMaxAge(maxAge);
+        refreshTokenCookie.setMaxAge(refreshExpiresIn);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
@@ -490,5 +534,13 @@ public class KeycloakServiceImpl implements KeycloakService {
                 .filter(cookie -> cookie.getName().equals(TokenType.refreshToken.name()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Refresh token is missing"));
+    }
+
+    private AuthResponse buildAuthResponseDto(String accessToken, Long expiresIn, String tokenType) {
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .expiresIn(expiresIn)
+                .tokenType(tokenType)
+                .build();
     }
 }
