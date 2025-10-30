@@ -3,6 +3,8 @@ package ai.lab.inlive.dto.params;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 public class DictionarySearchParams {
     @Parameter(description = "Статус удаления (true - удаленные, false - активные)")
