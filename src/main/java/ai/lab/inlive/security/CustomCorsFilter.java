@@ -5,45 +5,32 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotNull;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 public class CustomCorsFilter extends OncePerRequestFilter {
+    private final List<String> allowedOrigins = Arrays.asList("http://localhost:3000", "http://10.36.40.16:3000", "http://localhost:3001", "https://ui-tap-front.vercel.app");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    @NotNull FilterChain filterChain) throws ServletException, IOException {
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String origin = request.getHeader("Origin");
 
-        if (origin != null && (
-                origin.startsWith("http://localhost:") ||
-                        origin.startsWith("https://localhost:") ||
-                        origin.startsWith("http://127.0.0.1:") ||
-                        origin.startsWith("https://127.0.0.1:") ||
-                        origin.equals("http://10.36.40.16:3000") ||
-                        origin.endsWith("your-production-domain.com")
-        )) {
+        if (allowedOrigins.contains(origin)) {
             response.setHeader("Access-Control-Allow-Origin", origin);
-            response.setHeader("Vary", "Origin");
         }
 
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-
-        String reqHeaders = request.getHeader("Access-Control-Request-Headers");
-        if (reqHeaders != null && !reqHeaders.isBlank()) {
-            response.setHeader("Access-Control-Allow-Headers", reqHeaders);
-        } else {
-            response.setHeader("Access-Control-Allow-Headers",
-                    "Authorization, Content-Type, X-Requested-With, Accept, Origin, X-XSRF-TOKEN, X-CSRF-TOKEN");
-        }
-
-        response.setHeader("Access-Control-Expose-Headers", "Authorization, XSRF-TOKEN");
-
+        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, Accept, Origin");
+        response.setHeader("Access-Control-Expose-Headers", "Set-Cookie, Authorization");
         response.setHeader("Access-Control-Allow-Credentials", "true");
         response.setHeader("Access-Control-Max-Age", "3600");
 

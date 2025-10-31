@@ -511,18 +511,22 @@ public class KeycloakServiceImpl implements KeycloakService {
     }
 
     private Cookie buildRoleCookie(String role) {
-        Cookie roleCookie = new Cookie("USER_ROLE", role);
-        roleCookie.setPath("/");
-        return roleCookie;
+        Cookie cookie = new Cookie("USER_ROLE", role);
+        cookie.setHttpOnly(false);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setAttribute("SameSite", "None");
+        return cookie;
     }
 
     private Cookie buildRefreshTokenCookie(String refreshToken, Integer refreshExpiresIn) {
-        Cookie refreshTokenCookie = new Cookie(TokenType.refreshToken.name(), refreshToken);
-        refreshTokenCookie.setMaxAge(refreshExpiresIn);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
-        refreshTokenCookie.setPath("/");
-        return refreshTokenCookie;
+        Cookie cookie = new Cookie(TokenType.refreshToken.name(), refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(refreshExpiresIn);
+        cookie.setAttribute("SameSite", "None");
+        return cookie;
     }
 
     private Cookie extractRefreshTokenCookie(HttpServletRequest request) {
