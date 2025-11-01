@@ -30,12 +30,8 @@ public class DictionaryServiceImpl implements DictionaryService {
     public void createDictionary(DictionaryCreateRequest request) {
         log.info("Creating dictionary with key: {}", request.getKey());
 
-        if (dictionaryRepository.existsByKeyAndIsDeletedFalse(request.getKey())) {
-            throw new RuntimeException("Dictionary with key '" + request.getKey() + "' already exists");
-        }
-
         Dictionary dictionary = new Dictionary();
-        dictionary.setKey(dictionary.getKey());
+        dictionary.setKey(request.getKey());
         dictionary.setValue(request.getValue());
 
         Dictionary saved = dictionaryRepository.save(dictionary);
@@ -54,17 +50,7 @@ public class DictionaryServiceImpl implements DictionaryService {
     public Page<DictionaryResponse> searchWithParams(DictionarySearchParams dictionarySearchParams, Pageable pageable) {
         log.info("Searching dictionaries with params: {}", dictionarySearchParams);
 
-        boolean keysProvided = dictionarySearchParams.getKeys() != null && !dictionarySearchParams.getKeys().isEmpty();
-        String[] keysArray = keysProvided ? dictionarySearchParams.getKeys().toArray(new String[0]) : null;
-
-        var dictionaries = dictionaryRepository.findWithFilters(
-                dictionarySearchParams.getIsDeleted(),
-                // dictionarySearchParams.getKeys(),
-                 keysArray,
-                 keysProvided,
-                dictionarySearchParams.getValue(),
-                pageable
-        );
+        var dictionaries = dictionaryRepository.findWithFilters(dictionarySearchParams, pageable);
 
         return dictionaries.map(mapper::toDto);
     }

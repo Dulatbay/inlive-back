@@ -53,6 +53,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodation.setCity(city);
         accommodation.setDistrict(district);
         accommodation.setOwnerId(owner);
+        accommodation.setApproved(null);
 
         accommodationRepository.save(accommodation);
         log.info("Successfully created accommodation with ID: {}", accommodation.getId());
@@ -70,16 +71,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     public Page<AccommodationResponse> searchWithParams(AccommodationSearchParams accommodationSearchParams, Pageable pageable) {
         log.info("Searching accommodations with params: {}", accommodationSearchParams);
 
-        var accommodations = accommodationRepository.findWithFilters(
-                accommodationSearchParams.getCityId(),
-                accommodationSearchParams.getDistrictId(),
-                accommodationSearchParams.getApproved(),
-                accommodationSearchParams.getOwnerId(),
-                accommodationSearchParams.getMinRating(),
-                accommodationSearchParams.getIsDeleted(),
-                accommodationSearchParams.getName(),
-                pageable
-        );
+        var accommodations = accommodationRepository.findWithFilters(accommodationSearchParams, pageable);
 
         return accommodations.map(mapper::toDto);
     }
@@ -183,7 +175,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Override
     public List<AccommodationResponse> getPendingAccommodations() {
         log.info("Fetching pending accommodations");
-        List<Accommodation> accommodations = accommodationRepository.findByApprovedAndIsDeletedFalse(false);
+        List<Accommodation> accommodations = accommodationRepository.findByApprovedIsNullAndIsDeletedFalse();
         return accommodations.stream()
                 .map(mapper::toDto)
                 .collect(Collectors.toList());

@@ -40,7 +40,6 @@ public class AccommodationController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createAccommodation(
             @RequestBody @Valid AccommodationCreateRequest request) {
-        log.info("Creating accommodation: {}", request.getName());
         accommodationService.createAccommodation(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -50,7 +49,6 @@ public class AccommodationController {
     public ResponseEntity<AccommodationResponse> getAccommodationById(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id) {
-        log.info("Fetching accommodation by ID: {}", id);
         AccommodationResponse response = accommodationService.getAccommodationById(id);
         return ResponseEntity.ok(response);
     }
@@ -63,9 +61,6 @@ public class AccommodationController {
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
             @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
-        log.info("Searching accommodations with filters - page: {}, size: {}, sortBy: {}, sortDirection: {}, filters: {}",
-                page, size, sortBy, sortDirection, accommodationSearchParams);
-
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -81,7 +76,6 @@ public class AccommodationController {
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id,
             @RequestBody @Valid AccommodationUpdateRequest request) {
-        log.info("Updating accommodation with ID: {}", id);
         accommodationService.updateAccommodation(id, request);
         return ResponseEntity.ok().build();
     }
@@ -91,7 +85,6 @@ public class AccommodationController {
     public ResponseEntity<Void> deleteAccommodation(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id) {
-        log.info("Deleting accommodation with ID: {}", id);
         accommodationService.deleteAccommodation(id);
         return ResponseEntity.noContent().build();
     }
@@ -103,7 +96,6 @@ public class AccommodationController {
             @PathVariable Long id) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var approvedByUserId = Utils.extractIdFromToken(token);
-        log.info("Approving accommodation with ID: {} by user: {}", id, approvedByUserId);
         AccommodationResponse response = accommodationService.approveAccommodation(id, approvedByUserId);
         return ResponseEntity.ok(response);
     }
@@ -113,7 +105,6 @@ public class AccommodationController {
     public ResponseEntity<AccommodationResponse> rejectAccommodation(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id) {
-        log.info("Rejecting accommodation with ID: {}", id);
         AccommodationResponse response = accommodationService.rejectAccommodation(id);
         return ResponseEntity.ok(response);
     }
@@ -123,7 +114,6 @@ public class AccommodationController {
     public ResponseEntity<List<AccommodationResponse>> getAccommodationsByOwner(
             @Parameter(description = "ID владельца")
             @PathVariable Long ownerId) {
-        log.info("Fetching accommodations for owner: {}", ownerId);
         List<AccommodationResponse> response = accommodationService.getAccommodationsByOwner(ownerId);
         return ResponseEntity.ok(response);
     }
@@ -131,7 +121,6 @@ public class AccommodationController {
     @Operation(summary = "Получить размещения на модерации", description = "Получение всех размещений, ожидающих одобрения")
     @GetMapping("/pending")
     public ResponseEntity<List<AccommodationResponse>> getPendingAccommodations() {
-        log.info("Fetching pending accommodations");
         List<AccommodationResponse> response = accommodationService.getPendingAccommodations();
         return ResponseEntity.ok(response);
     }
@@ -139,7 +128,6 @@ public class AccommodationController {
     @Operation(summary = "Получить одобренные размещения", description = "Получение всех одобренных размещений")
     @GetMapping("/approved")
     public ResponseEntity<List<AccommodationResponse>> getApprovedAccommodations() {
-        log.info("Fetching approved accommodations");
         List<AccommodationResponse> response = accommodationService.getApprovedAccommodations();
         return ResponseEntity.ok(response);
     }

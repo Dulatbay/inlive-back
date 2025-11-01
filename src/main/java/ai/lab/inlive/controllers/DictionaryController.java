@@ -36,7 +36,6 @@ public class DictionaryController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createDictionary(
             @RequestBody @Valid DictionaryCreateRequest request) {
-        log.info("Creating dictionary: {}", request.getKey());
         dictionaryService.createDictionary(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -46,7 +45,6 @@ public class DictionaryController {
     public ResponseEntity<DictionaryResponse> getDictionaryById(
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id) {
-        log.info("Fetching dictionary by ID: {}", id);
         DictionaryResponse response = dictionaryService.getDictionaryById(id);
         return ResponseEntity.ok(response);
     }
@@ -59,9 +57,6 @@ public class DictionaryController {
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
             @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
-        log.info("Searching dictionaries with filters: {}, page: {}, size: {}, sortBy: {}, sortDirection: {}",
-                dictionarySearchParams, page, size, sortBy, sortDirection);
-
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -77,7 +72,6 @@ public class DictionaryController {
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id,
             @RequestBody @Valid DictionaryUpdateRequest request) {
-        log.info("Updating dictionary with ID: {}", id);
         dictionaryService.updateDictionary(id, request);
         return ResponseEntity.ok().build();
     }
@@ -87,7 +81,6 @@ public class DictionaryController {
     public ResponseEntity<Void> deleteDictionary(
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id) {
-        log.info("Deleting dictionary with ID: {}", id);
         dictionaryService.deleteDictionary(id);
         return ResponseEntity.noContent().build();
     }

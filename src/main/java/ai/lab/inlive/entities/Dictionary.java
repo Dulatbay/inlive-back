@@ -11,7 +11,7 @@ import lombok.EqualsAndHashCode;
 @Table(name = "dictionaries")
 public class Dictionary extends AbstractEntity<Long> {
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "\"key\"", nullable = false)
     private DictionaryKey key;
 
     @Column(nullable = false)

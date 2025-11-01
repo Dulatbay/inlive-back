@@ -1,5 +1,6 @@
 package ai.lab.inlive.dto.params;
 
+import ai.lab.inlive.entities.enums.DictionaryKey;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.Data;
 
@@ -11,7 +12,7 @@ public class DictionarySearchParams {
     private Boolean isDeleted;
 
     @Parameter(description = "Ключи (поиск по части ключей)")
-    private List<String> keys;
+    private List<DictionaryKey> keys;
 
     @Parameter(description = "Значение (поиск по части значения)")
     private String value;

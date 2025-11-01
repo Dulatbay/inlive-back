@@ -4,7 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -15,7 +14,7 @@ import java.util.List;
 
 @Slf4j
 public class CustomCorsFilter extends OncePerRequestFilter {
-    private final List<String> allowedOrigins = Arrays.asList("http://localhost:3000", "http://10.36.40.16:3000", "http://localhost:3001", "https://ui-tap-front.vercel.app");
+    private final List<String> allowedOrigins = Arrays.asList("http://localhost:3000", "http://10.36.40.16:3000", "http://localhost:3001", "https://ui-tap-front.vercel.app", "http://192.168.1.157:3000");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
