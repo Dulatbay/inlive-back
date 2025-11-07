@@ -8,11 +8,9 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
 public interface AccommodationService {
 
-    void createAccommodation(AccommodationCreateRequest request);
+    void createAccommodation(AccommodationCreateRequest request, String createdBy);
 
     AccommodationResponse getAccommodationById(Long id);
 
@@ -25,14 +23,10 @@ public interface AccommodationService {
     void deleteAccommodation(Long id);
 
     @Transactional
-    AccommodationResponse approveAccommodation(Long id, String approvedBy);
+    void approveAccommodation(Long id, String approvedBy);
 
     @Transactional
-    AccommodationResponse rejectAccommodation(Long id);
+    void rejectAccommodation(Long id, String rejectedBy);
 
-    List<AccommodationResponse> getAccommodationsByOwner(Long ownerId);
-
-    List<AccommodationResponse> getPendingAccommodations();
-
-    List<AccommodationResponse> getApprovedAccommodations();
+    Page<AccommodationResponse> getAccommodationsByOwner(String ownerId, AccommodationSearchParams accommodationSearchParams, Pageable pageable);
 }

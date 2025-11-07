@@ -3,10 +3,16 @@ package ai.lab.inlive.mappers;
 import ai.lab.inlive.dto.request.AccUnitTariffCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUnitCreateRequest;
 import ai.lab.inlive.dto.response.AccUnitTariffResponse;
+import ai.lab.inlive.dto.response.AccommodationUnitResponse;
+import ai.lab.inlive.dto.response.DictionaryResponse;
 import ai.lab.inlive.entities.*;
+import ai.lab.inlive.entities.enums.DictionaryKey;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface AccommodationUnitMapper {
@@ -35,6 +41,16 @@ public interface AccommodationUnitMapper {
     @Mapping(target = "dictionary", source = "dictionary")
     AccUnitDictionary toDictionaryLink(Accommodation accommodation, AccommodationUnit unit, Dictionary dictionary);
 
+    @Mapping(target = "accommodationId", source = "accommodation.id")
+    @Mapping(target = "unitType", expression = "java(unit.getUnitType() != null ? unit.getUnitType().name() : null)")
+    @Mapping(target = "services", expression = "java(extractDictionariesByKey(unit, ai.lab.inlive.entities.enums.DictionaryKey.ACC_SERVICE))")
+    @Mapping(target = "conditions", expression = "java(extractDictionariesByKey(unit, ai.lab.inlive.entities.enums.DictionaryKey.ACC_CONDITION))")
+    @Mapping(target = "tariffs", expression = "java(mapTariffs(unit))")
+    AccommodationUnitResponse toDto(AccommodationUnit unit);
+
+    @Mapping(target = "key", expression = "java(dictionary.getKey().name())")
+    DictionaryResponse dictionaryToDto(Dictionary dictionary);
+
     @Named("normalizeCurrency")
     default String normalizeCurrency(String currency) {
         return (currency == null || currency.isBlank()) ? "KZT" : currency;
@@ -43,5 +59,24 @@ public interface AccommodationUnitMapper {
     @Named("normalizeIsAvailable")
     default Boolean normalizeIsAvailable(Boolean isAvailable) {
         return isAvailable == null ? Boolean.TRUE : isAvailable;
+    }
+
+    default List<DictionaryResponse> extractDictionariesByKey(AccommodationUnit unit, DictionaryKey key) {
+        if (unit.getDictionaries() == null) {
+            return List.of();
+        }
+        return unit.getDictionaries().stream()
+                .filter(ud -> ud.getDictionary() != null && ud.getDictionary().getKey() == key)
+                .map(ud -> dictionaryToDto(ud.getDictionary()))
+                .collect(Collectors.toList());
+    }
+
+    default List<AccUnitTariffResponse> mapTariffs(AccommodationUnit unit) {
+        if (unit.getTariffs() == null) {
+            return List.of();
+        }
+        return unit.getTariffs().stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
     }
 }

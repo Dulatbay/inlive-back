@@ -32,7 +32,7 @@ public interface AccommodationMapper {
     @Mapping(target = "district", ignore = true)
     @Mapping(target = "approved", ignore = true)
     @Mapping(target = "approvedBy", ignore = true)
-    @Mapping(target = "rating", constant = "0.0")
+    @Mapping(target = "rating", ignore = true)
     @Mapping(target = "images", ignore = true)
     @Mapping(target = "documents", ignore = true)
     @Mapping(target = "dictionaries", ignore = true)

@@ -40,7 +40,10 @@ public class AccommodationController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createAccommodation(
             @RequestBody @Valid AccommodationCreateRequest request) {
-        accommodationService.createAccommodation(request);
+        var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var createdByUserId = Utils.extractIdFromToken(token);
+
+        accommodationService.createAccommodation(request, createdByUserId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -90,45 +93,46 @@ public class AccommodationController {
     }
 
     @Operation(summary = "Одобрить размещение", description = "Одобрение размещения администратором")
-    @PostMapping("/{id}/approve")
-    public ResponseEntity<AccommodationResponse> approveAccommodation(
+    @PatchMapping("/{id}/approve")
+    public ResponseEntity<Void> approveAccommodation(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var approvedByUserId = Utils.extractIdFromToken(token);
-        AccommodationResponse response = accommodationService.approveAccommodation(id, approvedByUserId);
-        return ResponseEntity.ok(response);
+
+        accommodationService.approveAccommodation(id, approvedByUserId);
+        return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Отклонить размещение", description = "Отклонение размещения администратором")
-    @PostMapping("/{id}/reject")
-    public ResponseEntity<AccommodationResponse> rejectAccommodation(
+    @PatchMapping("/{id}/reject")
+    public ResponseEntity<Void> rejectAccommodation(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id) {
-        AccommodationResponse response = accommodationService.rejectAccommodation(id);
-        return ResponseEntity.ok(response);
+        var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var approvedByUserId = Utils.extractIdFromToken(token);
+
+        accommodationService.rejectAccommodation(id, approvedByUserId);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @Operation(summary = "Получить размещения владельца", description = "Получение всех размещений определенного владельца")
-    @GetMapping("/owner/{ownerId}")
-    public ResponseEntity<List<AccommodationResponse>> getAccommodationsByOwner(
-            @Parameter(description = "ID владельца")
-            @PathVariable Long ownerId) {
-        List<AccommodationResponse> response = accommodationService.getAccommodationsByOwner(ownerId);
-        return ResponseEntity.ok(response);
-    }
+    @GetMapping("/owner/search")
+    public ResponseEntity<PaginatedResponse<AccommodationResponse>> getAccommodationsByOwner(
+            @ModelAttribute AccommodationSearchParams accommodationSearchParams,
+            @Parameter(description = "Номер страницы (начиная с 0)") @RequestParam(defaultValue = "0") Integer page,
+            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
+            @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "id") String sortBy,
+            @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
+        var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var ownerId = Utils.extractIdFromToken(token);
 
-    @Operation(summary = "Получить размещения на модерации", description = "Получение всех размещений, ожидающих одобрения")
-    @GetMapping("/pending")
-    public ResponseEntity<List<AccommodationResponse>> getPendingAccommodations() {
-        List<AccommodationResponse> response = accommodationService.getPendingAccommodations();
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(summary = "Получить одобренные размещения", description = "Получение всех одобренных размещений")
-    @GetMapping("/approved")
-    public ResponseEntity<List<AccommodationResponse>> getApprovedAccommodations() {
-        List<AccommodationResponse> response = accommodationService.getApprovedAccommodations();
-        return ResponseEntity.ok(response);
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
+        Page<AccommodationResponse> response = accommodationService.getAccommodationsByOwner(ownerId, accommodationSearchParams, pageable);
+        return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 }
