@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper=false)
 @Data
@@ -44,17 +44,17 @@ public class Accommodation extends AbstractEntity<Long> {
     private User ownerId;
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccImages> images = new ArrayList<>();
+    private Set<AccImages> images = new HashSet<>();
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccDocuments> documents = new ArrayList<>();
+    private Set<AccDocuments> documents = new HashSet<>();
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccDictionary> dictionaries = new ArrayList<>();
+    private Set<AccDictionary> dictionaries = new HashSet<>();
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccConfig> configs = new ArrayList<>();
+    private Set<AccConfig> configs = new HashSet<>();
 
     @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccommodationUnit> units = new ArrayList<>();
+    private Set<AccommodationUnit> units = new HashSet<>();
 }

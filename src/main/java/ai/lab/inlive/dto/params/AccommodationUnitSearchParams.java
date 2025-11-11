@@ -25,5 +25,11 @@ public class AccommodationUnitSearchParams {
 
     @Parameter(description = "Максимальная вместимость")
     private Integer maxCapacity;
+
+    @Parameter(description = "Минимальная площадь")
+    private Double minArea;
+
+    @Parameter(description = "Максимальная площадь")
+    private Double maxArea;
 }
 

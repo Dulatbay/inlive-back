@@ -4,6 +4,7 @@ import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
+import ai.lab.inlive.entities.AccImages;
 import ai.lab.inlive.entities.Accommodation;
 import ai.lab.inlive.entities.City;
 import ai.lab.inlive.entities.District;
@@ -15,13 +16,19 @@ import ai.lab.inlive.repositories.CityRepository;
 import ai.lab.inlive.repositories.DistrictRepository;
 import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.services.AccommodationService;
+import ai.lab.inlivefilemanager.client.api.FileManagerApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_IMAGE_DIR;
 
 @Slf4j
 @Service
@@ -33,17 +40,18 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final CityRepository cityRepository;
     private final DistrictRepository districtRepository;
     private final UserRepository userRepository;
+    private final FileManagerApi fileManagerApi;
 
     @Override
     @Transactional
     public void createAccommodation(AccommodationCreateRequest request, String createdBy) {
         log.info("Creating accommodation with name: {}", request.getName());
 
-        City city = cityRepository.findById(request.getCityId())
+        var city = cityRepository.findById(request.getCityId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
-        District district = districtRepository.findById(request.getDistrictId())
+        var district = districtRepository.findById(request.getDistrictId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", "District not found with ID: " + request.getDistrictId()));
-        User owner = userRepository.findByKeycloakId(createdBy)
+        var owner = userRepository.findByKeycloakId(createdBy)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + createdBy));
 
         Accommodation accommodation = mapper.toEntity(request);
@@ -54,6 +62,35 @@ public class AccommodationServiceImpl implements AccommodationService {
         accommodation.setApproved(null);
 
         accommodationRepository.save(accommodation);
+
+        // Upload images if provided
+        if (request.getImages() != null && !request.getImages().isEmpty()) {
+            log.info("Uploading {} images for accommodation ID: {}", request.getImages().size(), accommodation.getId());
+
+            ResponseEntity<List<String>> response = fileManagerApi.uploadFiles(
+                    FILE_MANAGER_IMAGE_DIR,
+                    request.getImages(),
+                    true
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                List<String> imageUrls = response.getBody();
+                log.info("Successfully uploaded {} images", imageUrls.size());
+
+                for (String imageUrl : imageUrls) {
+                    AccImages accImage = new AccImages();
+                    accImage.setAccommodation(accommodation);
+                    accImage.setImageUrl(imageUrl);
+                    accommodation.getImages().add(accImage);
+                }
+
+                accommodationRepository.save(accommodation);
+            } else {
+                log.error("Failed to upload images for accommodation ID: {}", accommodation.getId());
+                throw new RuntimeException("Failed to upload images");
+            }
+        }
+
         log.info("Successfully created accommodation with ID: {}", accommodation.getId());
     }
 

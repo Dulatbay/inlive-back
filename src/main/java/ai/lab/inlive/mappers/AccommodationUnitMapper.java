@@ -11,7 +11,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
@@ -61,22 +61,22 @@ public interface AccommodationUnitMapper {
         return isAvailable == null ? Boolean.TRUE : isAvailable;
     }
 
-    default List<DictionaryResponse> extractDictionariesByKey(AccommodationUnit unit, DictionaryKey key) {
+    default Set<DictionaryResponse> extractDictionariesByKey(AccommodationUnit unit, DictionaryKey key) {
         if (unit.getDictionaries() == null) {
-            return List.of();
+            return Set.of();
         }
         return unit.getDictionaries().stream()
                 .filter(ud -> ud.getDictionary() != null && ud.getDictionary().getKey() == key)
                 .map(ud -> dictionaryToDto(ud.getDictionary()))
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
-    default List<AccUnitTariffResponse> mapTariffs(AccommodationUnit unit) {
+    default Set<AccUnitTariffResponse> mapTariffs(AccommodationUnit unit) {
         if (unit.getTariffs() == null) {
-            return List.of();
+            return Set.of();
         }
         return unit.getTariffs().stream()
                 .map(this::toDto)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 }

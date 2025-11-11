@@ -37,9 +37,9 @@ public class AccommodationController {
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать размещение", description = "Создание нового размещения")
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> createAccommodation(
-            @RequestBody @Valid AccommodationCreateRequest request) {
+            @ModelAttribute @Valid AccommodationCreateRequest request) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var createdByUserId = Utils.extractIdFromToken(token);
 

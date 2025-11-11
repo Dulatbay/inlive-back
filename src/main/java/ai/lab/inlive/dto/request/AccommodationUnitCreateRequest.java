@@ -35,9 +35,6 @@ public class AccommodationUnitCreateRequest {
     // Optional
     private Integer floor;
 
-    // Optional, default true
-    private Boolean isAvailable;
-
     // Dictionaries: ACC_SERVICE
     private List<Long> serviceDictionaryIds;
 

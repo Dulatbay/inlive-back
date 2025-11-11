@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper=false)
 @Data
@@ -20,5 +20,5 @@ public class District extends AbstractEntity<Long> {
     private String name;
 
     @OneToMany(mappedBy = "district", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Accommodation> accommodations = new ArrayList<>();
+    private Set<Accommodation> accommodations = new HashSet<>();
 }

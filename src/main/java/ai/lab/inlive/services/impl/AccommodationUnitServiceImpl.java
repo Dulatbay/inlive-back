@@ -28,8 +28,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -60,11 +61,8 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
         AccommodationUnit unit = unitMapper.toEntity(request);
         unit.setAccommodation(accommodation);
-        if (unit.getIsAvailable() == null) {
-            unit.setIsAvailable(Boolean.TRUE);
-        }
 
-        List<AccUnitDictionary> unitDictionaries = new ArrayList<>();
+        Set<AccUnitDictionary> unitDictionaries = new HashSet<>();
 
         if (request.getServiceDictionaryIds() != null) {
             for (Long id : request.getServiceDictionaryIds()) {

@@ -6,8 +6,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper = false)
 @Data
@@ -44,11 +44,11 @@ public class AccSearchRequest extends AbstractEntity<Long> {
     private SearchRequestStatus status;
 
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccSearchRequestUnitType> unitTypes = new ArrayList<>();
+    private Set<AccSearchRequestUnitType> unitTypes = new HashSet<>();
 
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccSearchRequestDictionary> dictionaries = new ArrayList<>();
+    private Set<AccSearchRequestDictionary> dictionaries = new HashSet<>();
 
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccSearchRequestDistrict> districts = new ArrayList<>();
+    private Set<AccSearchRequestDistrict> districts = new HashSet<>();
 }

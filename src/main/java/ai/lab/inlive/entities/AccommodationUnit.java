@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @EqualsAndHashCode(callSuper=false)
 @Data
@@ -35,14 +35,14 @@ public class AccommodationUnit extends AbstractEntity<Long> {
     private Integer floor;
 
     @Column(name = "is_available", nullable = false)
-    private Boolean isAvailable;
+    private Boolean isAvailable = Boolean.TRUE;
 
     @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccUnitImages> images = new ArrayList<>();
+    private Set<AccUnitImages> images = new HashSet<>();
 
     @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccUnitDictionary> dictionaries = new ArrayList<>();
+    private Set<AccUnitDictionary> dictionaries = new HashSet<>();
 
     @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccUnitTariffs> tariffs = new ArrayList<>();
+    private Set<AccUnitTariffs> tariffs = new HashSet<>();
 }

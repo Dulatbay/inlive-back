@@ -31,5 +31,5 @@ public class Reservation extends AbstractEntity<Long> {
     private ReservationStatus status;
 
     @Column(name = "is_need_to_pay")
-    private Boolean needToPay = false;
+    private Boolean needToPay = Boolean.FALSE;
 }

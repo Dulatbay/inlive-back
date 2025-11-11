@@ -8,6 +8,9 @@ spring:
     username: ${KEYCLOAK_ADMIN:admin}
     password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
     send-email: false
+    file-api:
+      name: file-api
+      url: ${FILE_API_URL:http://localhost:8888}
 
   datasource:
     url: jdbc:postgresql://${POSTGRES_ADDRESS:localhost}:${POSTGRES_ADDRESS_PORT:5434}/${POSTGRES_DB_NAME:inlive}

@@ -10,4 +10,5 @@ public class ValueConstants {
     public static final ZoneId ZONE_ID = ZoneId.of("UTC+00:00");
     public static final String USER_ID_CLAIM = "user_id";
     public static final String USER_NAME_CLAIM = "name";
+    public static final String FILE_MANAGER_IMAGE_DIR = "image";
 }

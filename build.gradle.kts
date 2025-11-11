@@ -6,7 +6,6 @@ plugins {
 
 group = "ai.lab"
 version = "0.0.1-SNAPSHOT"
-description = "inlive"
 
 java {
     toolchain {
@@ -24,12 +23,15 @@ repositories {
     mavenCentral()
 }
 
+extra["springCloudVersion"] = "2025.0.0"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     implementation("org.springframework.security:spring-security-oauth2-client")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation("io.jsonwebtoken:jjwt:0.9.1")
     implementation("org.keycloak:keycloak-admin-client:26.0.7")
     implementation("io.swagger.core.v3:swagger-annotations:2.2.38")
@@ -43,6 +45,7 @@ dependencies {
     implementation("org.apache.commons:commons-lang3")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
+    implementation(project(":client-libs:inlive-file-manager"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -50,4 +53,10 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
+    }
 }

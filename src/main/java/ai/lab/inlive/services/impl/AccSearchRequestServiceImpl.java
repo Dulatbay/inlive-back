@@ -125,7 +125,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         AccSearchRequest saved = accSearchRequestRepository.save(searchRequest);
 
         // Добавляем типы недвижимости
-        List<AccSearchRequestUnitType> unitTypes = new ArrayList<>();
+        Set<AccSearchRequestUnitType> unitTypes = new HashSet<>();
         for (UnitType unitType : request.getUnitTypes()) {
             AccSearchRequestUnitType requestUnitType = new AccSearchRequestUnitType();
             requestUnitType.setSearchRequest(saved);
@@ -135,7 +135,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         saved.setUnitTypes(unitTypes);
 
         // Добавляем районы
-        List<AccSearchRequestDistrict> requestDistricts = new ArrayList<>();
+        Set<AccSearchRequestDistrict> requestDistricts = new HashSet<>();
         for (District district : districts) {
             AccSearchRequestDistrict requestDistrict = new AccSearchRequestDistrict();
             requestDistrict.setSearchRequest(saved);
@@ -145,7 +145,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         saved.setDistricts(requestDistricts);
 
         // Добавляем словари (услуги и условия)
-        List<AccSearchRequestDictionary> dictionaries = new ArrayList<>();
+        Set<AccSearchRequestDictionary> dictionaries = new HashSet<>();
         for (Dictionary service : services) {
             AccSearchRequestDictionary dict = new AccSearchRequestDictionary();
             dict.setSearchRequest(saved);

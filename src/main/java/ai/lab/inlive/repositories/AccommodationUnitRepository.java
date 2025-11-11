@@ -26,6 +26,8 @@ public interface AccommodationUnitRepository extends JpaRepository<Accommodation
               AND (CAST(:#{#params.name} AS VARCHAR) IS NULL OR UPPER(au.name) LIKE UPPER(CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')))
               AND (CAST(:#{#params.minCapacity} AS INTEGER) IS NULL OR au.capacity >= CAST(:#{#params.minCapacity} AS INTEGER))
               AND (CAST(:#{#params.maxCapacity} AS INTEGER) IS NULL OR au.capacity <= CAST(:#{#params.maxCapacity} AS INTEGER))
+              AND (CAST(:#{#params.minArea} AS DOUBLE PRECISION) IS NULL OR au.area >= CAST(:#{#params.minArea} AS DOUBLE PRECISION))
+              AND (CAST(:#{#params.maxArea} AS DOUBLE PRECISION) IS NULL OR au.area <= CAST(:#{#params.maxArea} AS DOUBLE PRECISION))
             """,
             countQuery = """
             SELECT COUNT(*)
@@ -38,6 +40,8 @@ public interface AccommodationUnitRepository extends JpaRepository<Accommodation
               AND (CAST(:#{#params.name} AS VARCHAR) IS NULL OR UPPER(au.name) LIKE UPPER(CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')))
               AND (CAST(:#{#params.minCapacity} AS INTEGER) IS NULL OR au.capacity >= CAST(:#{#params.minCapacity} AS INTEGER))
               AND (CAST(:#{#params.maxCapacity} AS INTEGER) IS NULL OR au.capacity <= CAST(:#{#params.maxCapacity} AS INTEGER))
+              AND (CAST(:#{#params.minArea} AS DOUBLE PRECISION) IS NULL OR au.area >= CAST(:#{#params.minArea} AS DOUBLE PRECISION))
+              AND (CAST(:#{#params.maxArea} AS DOUBLE PRECISION) IS NULL OR au.area <= CAST(:#{#params.maxArea} AS DOUBLE PRECISION))
             """,
             nativeQuery = true)
     Page<AccommodationUnit> findWithFilters(@Param("params") AccommodationUnitSearchParams params, Pageable pageable);

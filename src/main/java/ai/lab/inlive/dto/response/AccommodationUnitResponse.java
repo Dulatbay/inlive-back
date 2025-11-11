@@ -3,7 +3,7 @@ package ai.lab.inlive.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-import java.util.List;
+import java.util.Set;
 
 @Data
 @Schema(description = "Ответ с информацией о единице размещения")
@@ -36,11 +36,11 @@ public class AccommodationUnitResponse {
     private Boolean isAvailable;
 
     @Schema(description = "Список предоставляемых услуг")
-    private List<DictionaryResponse> services;
+    private Set<DictionaryResponse> services;
 
     @Schema(description = "Список условий проживания")
-    private List<DictionaryResponse> conditions;
+    private Set<DictionaryResponse> conditions;
 
     @Schema(description = "Список тарифов")
-    private List<AccUnitTariffResponse> tariffs;
+    private Set<AccUnitTariffResponse> tariffs;
 }
