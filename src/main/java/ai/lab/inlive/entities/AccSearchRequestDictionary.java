@@ -1,12 +1,12 @@
 package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-@EqualsAndHashCode(callSuper = false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "acc_search_request_dictionary")
 public class AccSearchRequestDictionary extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

@@ -3,12 +3,12 @@ package ai.lab.inlive.entities;
 import ai.lab.inlive.entities.enums.ClientResponseStatus;
 import ai.lab.inlive.entities.enums.PriceRequestStatus;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-@EqualsAndHashCode(callSuper = false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "price_request")
 public class PriceRequest extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

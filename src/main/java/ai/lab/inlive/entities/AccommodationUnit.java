@@ -2,15 +2,15 @@ package ai.lab.inlive.entities;
 
 import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "accommodation_units")
 public class AccommodationUnit extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

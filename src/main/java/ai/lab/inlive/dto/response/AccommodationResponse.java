@@ -2,6 +2,8 @@ package ai.lab.inlive.dto.response;
 
 import lombok.Data;
 
+import java.util.Set;
+
 @Data
 public class AccommodationResponse {
     private Long id;
@@ -16,4 +18,5 @@ public class AccommodationResponse {
     private Boolean approved;
     private Long approvedBy;
     private Long ownerId;
+    private Set<String> imageUrls;
 }

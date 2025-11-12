@@ -1,19 +1,19 @@
 package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "acc_config")
 public class AccConfig extends AbstractEntity<Long> {
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "acc_id")
     private Accommodation accommodation;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "dictionary_id")
     private Dictionary dictionary;
 

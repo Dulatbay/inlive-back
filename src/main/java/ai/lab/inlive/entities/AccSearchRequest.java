@@ -2,16 +2,16 @@ package ai.lab.inlive.entities;
 
 import ai.lab.inlive.entities.enums.SearchRequestStatus;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper = false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "acc_search_request")
 public class AccSearchRequest extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

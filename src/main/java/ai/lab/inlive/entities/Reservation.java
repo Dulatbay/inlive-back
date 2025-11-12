@@ -2,12 +2,12 @@ package ai.lab.inlive.entities;
 
 import ai.lab.inlive.entities.enums.ReservationStatus;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-@EqualsAndHashCode(callSuper = false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "reservation")
 public class Reservation extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

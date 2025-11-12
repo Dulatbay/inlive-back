@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 import static ai.lab.inlive.constants.ValueConstants.ZONE_ID;
 
 
-@EqualsAndHashCode
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Getter
 @MappedSuperclass
 public abstract class AbstractEntity<T extends Serializable> {

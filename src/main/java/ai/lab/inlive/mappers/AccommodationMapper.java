@@ -2,6 +2,7 @@ package ai.lab.inlive.mappers;
 
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
+import ai.lab.inlive.entities.AccImages;
 import ai.lab.inlive.entities.Accommodation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -16,6 +17,7 @@ public interface AccommodationMapper {
     @Mapping(target = "cityName", source = "city.name")
     @Mapping(target = "districtId", source = "district.id")
     @Mapping(target = "districtName", source = "district.name")
+    @Mapping(target = "imageUrls", source = "images")
     AccommodationResponse toDto(Accommodation accommodation);
 
     @Mapping(target = "approvedBy", ignore = true)
@@ -42,7 +44,13 @@ public interface AccommodationMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Accommodation toEntity(AccommodationCreateRequest request);
-    
+
+    AccImages toImage(Accommodation accommodation, String imageUrl);
+
+    default String map(AccImages image) {
+        return image != null ? image.getImageUrl() : null;
+    }
+
     List<AccommodationResponse> toDto(List<Accommodation> accommodations);
     List<Accommodation> toEntity(List<AccommodationResponse> dtos);
 }

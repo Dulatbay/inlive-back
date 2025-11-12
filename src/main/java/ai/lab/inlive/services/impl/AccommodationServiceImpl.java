@@ -22,11 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 
 import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_IMAGE_DIR;
 
@@ -47,6 +48,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void createAccommodation(AccommodationCreateRequest request, String createdBy) {
         log.info("Creating accommodation with name: {}", request.getName());
 
+        var images = new HashSet<AccImages>();
+
         var city = cityRepository.findById(request.getCityId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
         var district = districtRepository.findById(request.getDistrictId())
@@ -54,42 +57,25 @@ public class AccommodationServiceImpl implements AccommodationService {
         var owner = userRepository.findByKeycloakId(createdBy)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + createdBy));
 
-        Accommodation accommodation = mapper.toEntity(request);
+        var accommodation = mapper.toEntity(request);
+
         accommodation.setCity(city);
         accommodation.setDistrict(district);
         accommodation.setRating(request.getRating());
         accommodation.setOwnerId(owner);
         accommodation.setApproved(null);
 
-        accommodationRepository.save(accommodation);
-
-        // Upload images if provided
-        if (request.getImages() != null && !request.getImages().isEmpty()) {
-            log.info("Uploading {} images for accommodation ID: {}", request.getImages().size(), accommodation.getId());
-
-            ResponseEntity<List<String>> response = fileManagerApi.uploadFiles(
-                    FILE_MANAGER_IMAGE_DIR,
-                    request.getImages(),
-                    true
-            );
-
-            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                List<String> imageUrls = response.getBody();
-                log.info("Successfully uploaded {} images", imageUrls.size());
-
-                for (String imageUrl : imageUrls) {
-                    AccImages accImage = new AccImages();
-                    accImage.setAccommodation(accommodation);
-                    accImage.setImageUrl(imageUrl);
-                    accommodation.getImages().add(accImage);
-                }
-
-                accommodationRepository.save(accommodation);
-            } else {
-                log.error("Failed to upload images for accommodation ID: {}", accommodation.getId());
-                throw new RuntimeException("Failed to upload images");
-            }
+        if (request.getImages() != null) {
+            request.getImages()
+                    .forEach(image -> {
+                        var fileUrl = Objects.requireNonNull(fileManagerApi.uploadFiles(FILE_MANAGER_IMAGE_DIR, List.of(image), true).getBody()).getFirst();
+                        images.add(mapper.toImage(accommodation, fileUrl));
+                    });
         }
+
+        accommodation.setImages(images);
+
+        accommodationRepository.save(accommodation);
 
         log.info("Successfully created accommodation with ID: {}", accommodation.getId());
     }

@@ -1,15 +1,15 @@
 package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "districts")
 public class District extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
