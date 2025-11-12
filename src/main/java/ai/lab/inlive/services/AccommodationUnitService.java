@@ -28,19 +28,15 @@ public interface AccommodationUnitService {
 
     void updateUnit(Long id, AccommodationUnitUpdateRequest request);
 
-    // Методы для управления услугами и условиями
     void updateDictionaries(Long unitId, AccUnitDictionariesUpdateRequest request);
 
     List<DictionaryResponse> getUnitServices(Long unitId);
 
     List<DictionaryResponse> getUnitConditions(Long unitId);
 
-    // Метод для получения релевантных заявок
     Page<AccSearchRequestResponse> getRelevantRequests(Long unitId, Pageable pageable);
 
-    // Метод для получения заявок на цену
     Page<PriceRequestResponse> getUnitPriceRequests(Long unitId, Pageable pageable);
 
-    // Метод для получения ожидающих бронирований
     Page<ReservationResponse> getUnitPendingReservations(Long unitId, Pageable pageable);
 }

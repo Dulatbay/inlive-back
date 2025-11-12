@@ -17,4 +17,6 @@ public class AccommodationUpdateRequest {
 
     @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
+
+    private Double rating;
 }

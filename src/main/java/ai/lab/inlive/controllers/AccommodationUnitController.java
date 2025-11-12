@@ -102,8 +102,6 @@ public class AccommodationUnitController {
         return ResponseEntity.noContent().build();
     }
 
-    // Новые endpoints для управления услугами и условиями
-
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Обновить услуги и условия единицы размещения",
                description = "Обновление списков услуг (SERVICES) и условий (CONDITIONS) для квартиры/номера. Существующие списки будут заменены новыми.")

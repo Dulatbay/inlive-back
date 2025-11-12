@@ -59,7 +59,7 @@ public class KeycloakAuthService {
                 .append("&client_id=").append(clientId)
                 .append("&username=").append(username)
                 .append("&password=").append(password);
-
+        
         if (clientSecret != null && !clientSecret.isEmpty()) {
             requestBody.append("&client_secret=").append(clientSecret);
         }

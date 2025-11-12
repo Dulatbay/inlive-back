@@ -74,12 +74,22 @@ public class AccommodationController {
     }
 
     @Operation(summary = "Обновить размещение", description = "Обновление данных размещения")
-    @PutMapping("/{id}")
+    @PutMapping("/{id}/main-info")
     public ResponseEntity<Void> updateAccommodation(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id,
             @RequestBody @Valid AccommodationUpdateRequest request) {
         accommodationService.updateAccommodation(id, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Обновить фото размещения (синхронизация по URL)", description = "Передайте итоговый список URL изображений. Отсутствующие будут удалены, новые добавлены.")
+    @PutMapping("/{id}/photos")
+    public ResponseEntity<Void> updateAccommodationPhotos(
+            @Parameter(description = "ID размещения", example = "1")
+            @PathVariable Long id,
+            @RequestBody List<String> photoUrls) {
+        accommodationService.updateAccommodationPhotos(id, photoUrls);
         return ResponseEntity.ok().build();
     }
 

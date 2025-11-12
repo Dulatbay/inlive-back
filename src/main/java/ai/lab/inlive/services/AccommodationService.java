@@ -8,6 +8,8 @@ import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
+
 public interface AccommodationService {
 
     void createAccommodation(AccommodationCreateRequest request, String createdBy);
@@ -18,6 +20,10 @@ public interface AccommodationService {
 
     @Transactional
     void updateAccommodation(Long id, AccommodationUpdateRequest request);
+
+    void updateAccommodationPhotos(Long id, List<String> photoUrls);
+
+//    void update
 
     @Transactional
     void deleteAccommodation(Long id);

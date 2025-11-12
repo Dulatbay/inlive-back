@@ -22,14 +22,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_IMAGE_DIR;
+import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_IMAGE_DIR;
 
 @Slf4j
 @Service
@@ -68,7 +71,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         if (request.getImages() != null) {
             request.getImages()
                     .forEach(image -> {
-                        var fileUrl = Objects.requireNonNull(fileManagerApi.uploadFiles(FILE_MANAGER_IMAGE_DIR, List.of(image), true).getBody()).getFirst();
+                        var fileUrl = Objects.requireNonNull(fileManagerApi.uploadFiles(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, List.of(image), true).getBody()).getFirst();
                         images.add(mapper.toImage(accommodation, fileUrl));
                     });
         }
@@ -104,7 +107,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void updateAccommodation(Long id, AccommodationUpdateRequest request) {
         log.info("Updating accommodation with ID: {}", id);
 
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
         if (request.getCityId() != null) {
@@ -131,8 +134,67 @@ public class AccommodationServiceImpl implements AccommodationService {
             accommodation.setDescription(request.getDescription());
         }
 
+        if (request.getRating() != null) {
+            accommodation.setRating(request.getRating());
+        }
+
         accommodationRepository.save(accommodation);
         log.info("Successfully updated accommodation with ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void updateAccommodationPhotos(Long id, List<String> photoUrls) {
+        log.info("Updating photos for accommodation with ID: {}", id);
+
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+
+        Set<String> newUrls = photoUrls == null ? Set.of() : photoUrls.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+
+        Set<String> existingUrls = accommodation.getImages().stream()
+                .map(AccImages::getImageUrl)
+                .collect(Collectors.toSet());
+
+        Set<String> toRemove = existingUrls.stream()
+                .filter(url -> !newUrls.contains(url))
+                .collect(Collectors.toSet());
+
+        Set<String> toAdd = newUrls.stream()
+                .filter(url -> !existingUrls.contains(url))
+                .collect(Collectors.toSet());
+
+        if (!toRemove.isEmpty()) {
+            accommodation.getImages().removeIf(img -> toRemove.contains(img.getImageUrl()));
+            toRemove.forEach(url -> {
+                String filename = extractFilename(url);
+                try {
+                    ResponseEntity<String> resp = fileManagerApi.deleteFile(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, filename);
+                    if (resp == null || !resp.getStatusCode().is2xxSuccessful()) {
+                        log.warn("File deletion may have failed for URL: {} (status: {})", url, resp != null ? resp.getStatusCode() : null);
+                    }
+                } catch (Exception ex) {
+                    log.warn("Error while deleting file from file-manager for URL: {}. Continuing DB update. Error: {}", url, ex.getMessage());
+                }
+            });
+        }
+
+        toAdd.forEach(url -> accommodation.getImages().add(mapper.toImage(accommodation, url)));
+
+        accommodationRepository.save(accommodation);
+
+        log.info("Updated photos for accommodation with ID: {}. Added: {}, Removed: {}", id, toAdd.size(), toRemove.size());
+    }
+
+    private String extractFilename(String url) {
+        if (url == null) return null;
+        String noQuery = url.split("\\?")[0];
+        int lastSlash = noQuery.lastIndexOf('/');
+        return lastSlash >= 0 ? noQuery.substring(lastSlash + 1) : noQuery;
     }
 
     @Override

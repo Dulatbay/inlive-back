@@ -15,7 +15,7 @@ public class AccommodationUnitResponse {
     private Long accommodationId;
 
     @Schema(description = "Тип единицы", example = "APARTMENT")
-    private String unitType; // enum name
+    private String unitType;
 
     @Schema(description = "Название", example = "Люкс номер")
     private String name;
