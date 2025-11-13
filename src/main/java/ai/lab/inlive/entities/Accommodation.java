@@ -43,18 +43,18 @@ public class Accommodation extends AbstractEntity<Long> {
     @JoinColumn(name = "owner_id")
     private User ownerId;
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccImages> images = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccDocuments> documents = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccDictionary> dictionaries = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccConfig> configs = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccommodationUnit> units = new HashSet<>();
 }
