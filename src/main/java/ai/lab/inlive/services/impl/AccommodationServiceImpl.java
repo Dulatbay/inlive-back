@@ -11,6 +11,7 @@ import ai.lab.inlive.entities.District;
 import ai.lab.inlive.entities.User;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.mappers.AccommodationMapper;
+import ai.lab.inlive.mappers.ImageMapper;
 import ai.lab.inlive.repositories.AccommodationRepository;
 import ai.lab.inlive.repositories.CityRepository;
 import ai.lab.inlive.repositories.DistrictRepository;
@@ -41,6 +42,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     private final AccommodationRepository accommodationRepository;
     private final AccommodationMapper mapper;
+    private final ImageMapper imageMapper;
     private final CityRepository cityRepository;
     private final DistrictRepository districtRepository;
     private final UserRepository userRepository;
@@ -89,7 +91,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Fetching accommodation by ID: {}", id);
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
-        return mapper.toDto(accommodation);
+        return mapper.toDto(accommodation, imageMapper);
     }
 
     @Override
@@ -99,7 +101,7 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         var accommodations = accommodationRepository.findWithFilters(accommodationSearchParams, pageable);
 
-        return accommodations.map(mapper::toDto);
+        return accommodations.map(acc -> mapper.toDto(acc, imageMapper));
     }
 
     @Override
@@ -258,6 +260,6 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         var accommodations = accommodationRepository.findByOwnerIdWithFilters(owner.getId(), accommodationSearchParams, pageable);
 
-        return accommodations.map(mapper::toDto);
+        return accommodations.map(acc -> mapper.toDto(acc, imageMapper));
     }
 }

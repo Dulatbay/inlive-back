@@ -7,18 +7,16 @@ import ai.lab.inlive.entities.Accommodation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-import java.util.List;
-
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ImageMapper.class})
 public interface AccommodationMapper {
-    @Mapping(target = "approvedBy", source = "approvedBy.id")
-    @Mapping(target = "ownerId", source = "ownerId.id")
-    @Mapping(target = "cityId", source = "city.id")
-    @Mapping(target = "cityName", source = "city.name")
-    @Mapping(target = "districtId", source = "district.id")
-    @Mapping(target = "districtName", source = "district.name")
-    @Mapping(target = "imageUrls", source = "images")
-    AccommodationResponse toDto(Accommodation accommodation);
+    @Mapping(target = "approvedBy", source = "accommodation.approvedBy.id")
+    @Mapping(target = "ownerId", source = "accommodation.ownerId.id")
+    @Mapping(target = "cityId", source = "accommodation.city.id")
+    @Mapping(target = "cityName", source = "accommodation.city.name")
+    @Mapping(target = "districtId", source = "accommodation.district.id")
+    @Mapping(target = "districtName", source = "accommodation.district.name")
+    @Mapping(target = "imageUrls", expression = "java(imageMapper.getPathToAccommodationImage(accommodation))")
+    AccommodationResponse toDto(Accommodation accommodation, ImageMapper imageMapper);
 
     @Mapping(target = "approvedBy", ignore = true)
     @Mapping(target = "ownerId", ignore = true)
@@ -46,11 +44,4 @@ public interface AccommodationMapper {
     Accommodation toEntity(AccommodationCreateRequest request);
 
     AccImages toImage(Accommodation accommodation, String imageUrl);
-
-    default String map(AccImages image) {
-        return image != null ? image.getImageUrl() : null;
-    }
-
-    List<AccommodationResponse> toDto(List<Accommodation> accommodations);
-    List<Accommodation> toEntity(List<AccommodationResponse> dtos);
 }
