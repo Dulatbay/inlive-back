@@ -18,6 +18,7 @@ import java.util.List;
 
 public interface AccommodationUnitService {
     void createUnit(AccommodationUnitCreateRequest request);
+
     AccUnitTariffResponse addTariff(Long unitId, AccUnitTariffCreateRequest request);
 
     AccommodationUnitResponse getUnitById(Long id);

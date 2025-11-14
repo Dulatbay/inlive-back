@@ -56,11 +56,6 @@ public interface AccommodationUnitMapper {
         return (currency == null || currency.isBlank()) ? "KZT" : currency;
     }
 
-    @Named("normalizeIsAvailable")
-    default Boolean normalizeIsAvailable(Boolean isAvailable) {
-        return isAvailable == null ? Boolean.TRUE : isAvailable;
-    }
-
     default Set<DictionaryResponse> extractDictionariesByKey(AccommodationUnit unit, DictionaryKey key) {
         if (unit.getDictionaries() == null) {
             return Set.of();
@@ -80,5 +75,12 @@ public interface AccommodationUnitMapper {
                 .collect(Collectors.toSet());
     }
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "accommodation", source = "accommodation")
+    @Mapping(target = "unit", source = "unit")
+    @Mapping(target = "imageUrl", source = "imageUrl")
+    @Mapping(target = "isDeleted", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     AccUnitImages toImage(Accommodation accommodation, AccommodationUnit unit, String imageUrl);
 }

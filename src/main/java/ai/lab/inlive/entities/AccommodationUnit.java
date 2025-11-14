@@ -4,6 +4,7 @@ import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -37,12 +38,12 @@ public class AccommodationUnit extends AbstractEntity<Long> {
     @Column(name = "is_available", nullable = false)
     private Boolean isAvailable = Boolean.TRUE;
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccUnitImages> images = new HashSet<>();
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccUnitDictionary> dictionaries = new HashSet<>();
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccUnitTariffs> tariffs = new HashSet<>();
 }

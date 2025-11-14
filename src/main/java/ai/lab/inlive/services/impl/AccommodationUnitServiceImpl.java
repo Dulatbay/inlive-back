@@ -32,10 +32,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_IMAGE_DIR;
+import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR;
 
 @Slf4j
 @Service
@@ -62,49 +61,54 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
         log.info("Creating accommodation unit for accommodation: {}", request.getAccommodationId());
 
         var images = new HashSet<AccUnitImages>();
+        var unitDictionaries = new HashSet<AccUnitDictionary>();
 
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(request.getAccommodationId())
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(request.getAccommodationId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + request.getAccommodationId()));
 
-        AccommodationUnit unit = unitMapper.toEntity(request);
+        var unit = unitMapper.toEntity(request);
         unit.setAccommodation(accommodation);
 
-        Set<AccUnitDictionary> unitDictionaries = new HashSet<>();
-
         if (request.getServiceDictionaryIds() != null) {
-            for (Long id : request.getServiceDictionaryIds()) {
-                Dictionary d = dictionaryRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
-                if (d.getKey() != DictionaryKey.ACC_SERVICE) {
-                    throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + id + " must have key ACC_SERVICE");
-                }
-                unitDictionaries.add(unitMapper.toDictionaryLink(accommodation, unit, d));
-            }
+            request.getServiceDictionaryIds()
+                    .forEach(serviceDictionaryId -> {
+                        var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(serviceDictionaryId)
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + serviceDictionaryId));
+                        if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + serviceDictionaryId + " must have key ACC_SERVICE");
+                        }
+                        unitDictionaries.add(unitMapper.toDictionaryLink(accommodation, unit, dictionary));
+                    });
         }
 
         if (request.getConditionDictionaryIds() != null) {
-            for (Long id : request.getConditionDictionaryIds()) {
-                Dictionary d = dictionaryRepository.findByIdAndIsDeletedFalse(id)
-                        .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
-                if (d.getKey() != DictionaryKey.ACC_CONDITION) {
-                    throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + id + " must have key ACC_CONDITION");
-                }
-                unitDictionaries.add(unitMapper.toDictionaryLink(accommodation, unit, d));
-            }
+            request.getConditionDictionaryIds()
+                    .forEach(conditionDictionaryId -> {
+                        var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(conditionDictionaryId)
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + conditionDictionaryId));
+                        if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + conditionDictionaryId + " must have key ACC_CONDITION");
+                        }
+                        unitDictionaries.add(unitMapper.toDictionaryLink(accommodation, unit, dictionary));
+                    });
         }
+
         unit.setDictionaries(unitDictionaries);
+
+        var savedUnit = accommodationUnitRepository.save(unit);
 
         if (request.getImages() != null) {
             request.getImages()
                     .forEach(image -> {
-                        var fileUrl = Objects.requireNonNull(fileManagerApi.uploadFiles(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, List.of(image), true).getBody()).getFirst();
-                        images.add(unitMapper.toImage(accommodation, unit, fileUrl));
+                        var fileUrl = Objects.requireNonNull(fileManagerApi.uploadFiles(FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR, List.of(image), true).getBody()).getFirst();
+                        images.add(unitMapper.toImage(accommodation, savedUnit, fileUrl));
                     });
         }
 
         unit.setImages(images);
 
         accommodationUnitRepository.save(unit);
+
         log.info("Successfully created accommodation unit with ID: {}", unit.getId());
     }
 

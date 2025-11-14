@@ -34,10 +34,8 @@ public class AccommodationUnitCreateRequest {
 
     private Integer floor;
 
-    // Dictionaries: ACC_SERVICE
     private List<Long> serviceDictionaryIds;
 
-    // Dictionaries: ACC_CONDITION
     private List<Long> conditionDictionaryIds;
 
     private List<MultipartFile> images;
