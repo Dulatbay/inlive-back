@@ -79,4 +79,6 @@ public interface AccommodationUnitMapper {
                 .map(this::toDto)
                 .collect(Collectors.toSet());
     }
+
+    AccUnitImages toImage(Accommodation accommodation, AccommodationUnit unit, String imageUrl);
 }

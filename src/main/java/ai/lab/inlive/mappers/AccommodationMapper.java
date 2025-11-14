@@ -15,7 +15,7 @@ public interface AccommodationMapper {
     @Mapping(target = "cityName", source = "accommodation.city.name")
     @Mapping(target = "districtId", source = "accommodation.district.id")
     @Mapping(target = "districtName", source = "accommodation.district.name")
-    @Mapping(target = "imageUrls", expression = "java(imageMapper.getPathToAccommodationImage(accommodation))")
+    @Mapping(target = "imageUrls", expression = "java(imageMapper.getPathToAccommodationImages(accommodation))")
     AccommodationResponse toDto(Accommodation accommodation, ImageMapper imageMapper);
 
     @Mapping(target = "approvedBy", ignore = true)

@@ -41,8 +41,8 @@ public class AccommodationUnitController {
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать единицу размещения", description = "Создание новой квартиры/номера")
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Void> createUnit(@RequestBody @Valid AccommodationUnitCreateRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> createUnit(@ModelAttribute @Valid AccommodationUnitCreateRequest request) {
         accommodationUnitService.createUnit(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

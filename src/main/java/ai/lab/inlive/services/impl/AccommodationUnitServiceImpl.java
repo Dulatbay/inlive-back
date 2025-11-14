@@ -20,6 +20,7 @@ import ai.lab.inlive.mappers.PriceRequestMapper;
 import ai.lab.inlive.mappers.ReservationMapper;
 import ai.lab.inlive.repositories.*;
 import ai.lab.inlive.services.AccommodationUnitService;
+import ai.lab.inlivefilemanager.client.api.FileManagerApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,8 +31,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_IMAGE_DIR;
 
 @Slf4j
 @Service
@@ -50,11 +54,14 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
     private final AccSearchRequestMapper searchRequestMapper;
     private final PriceRequestMapper priceRequestMapper;
     private final ReservationMapper reservationMapper;
+    private final FileManagerApi fileManagerApi;
 
     @Override
     @Transactional
     public void createUnit(AccommodationUnitCreateRequest request) {
         log.info("Creating accommodation unit for accommodation: {}", request.getAccommodationId());
+
+        var images = new HashSet<AccUnitImages>();
 
         Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(request.getAccommodationId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + request.getAccommodationId()));
@@ -86,6 +93,16 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             }
         }
         unit.setDictionaries(unitDictionaries);
+
+        if (request.getImages() != null) {
+            request.getImages()
+                    .forEach(image -> {
+                        var fileUrl = Objects.requireNonNull(fileManagerApi.uploadFiles(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, List.of(image), true).getBody()).getFirst();
+                        images.add(unitMapper.toImage(accommodation, unit, fileUrl));
+                    });
+        }
+
+        unit.setImages(images);
 
         accommodationUnitRepository.save(unit);
         log.info("Successfully created accommodation unit with ID: {}", unit.getId());

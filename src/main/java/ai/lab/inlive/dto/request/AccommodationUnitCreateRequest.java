@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,10 +30,8 @@ public class AccommodationUnitCreateRequest {
     @Min(value = 1, message = "Capacity must be at least 1")
     private Integer capacity;
 
-    // Optional
     private Double area;
 
-    // Optional
     private Integer floor;
 
     // Dictionaries: ACC_SERVICE
@@ -40,5 +39,6 @@ public class AccommodationUnitCreateRequest {
 
     // Dictionaries: ACC_CONDITION
     private List<Long> conditionDictionaryIds;
-}
 
+    private List<MultipartFile> images;
+}
