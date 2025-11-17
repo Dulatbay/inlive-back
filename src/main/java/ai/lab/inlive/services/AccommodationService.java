@@ -8,6 +8,7 @@ import ai.lab.inlive.dto.response.AccommodationResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -24,9 +25,9 @@ public interface AccommodationService {
 
     void updateDictionaries(Long accommodationId, AccommodationDictionariesUpdateRequest request);
 
-    void updateAccommodationPhotos(Long id, List<String> photoUrls);
+    void updateAccommodationPhotos(Long id, List<MultipartFile> photoUrls);
 
-//    void update
+    void deleteAccommodationPhoto(Long id, String photoUrl);
 
     @Transactional
     void deleteAccommodation(Long id);

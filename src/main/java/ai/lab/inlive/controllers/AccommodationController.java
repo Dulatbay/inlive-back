@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -96,13 +97,25 @@ public class AccommodationController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Обновить фото размещения (синхронизация по URL)", description = "Передайте итоговый список URL изображений. Отсутствующие будут удалены, новые добавлены.")
-    @PutMapping("/{id}/photos")
+    @Operation(summary = "Обновить фото размещения", description = "Загрузка новых фотографий для размещения")
+    @PutMapping(path = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateAccommodationPhotos(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id,
-            @RequestBody List<String> photoUrls) {
-        accommodationService.updateAccommodationPhotos(id, photoUrls);
+            @RequestPart("images") List<MultipartFile> images) {
+        accommodationService.updateAccommodationPhotos(id, images);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Удалить конкретное фото размещения",
+               description = "Удаление одной фотографии по её URL или имени файла. Передайте URL фотографии в параметре запроса.")
+    @DeleteMapping(path = "/{id}/photos")
+    public ResponseEntity<Void> deleteAccommodationPhoto(
+            @Parameter(description = "ID размещения", example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "URL или имя файла фотографии для удаления", example = "photo.jpg")
+            @RequestParam String photoUrl) {
+        accommodationService.deleteAccommodationPhoto(id, photoUrl);
         return ResponseEntity.ok().build();
     }
 

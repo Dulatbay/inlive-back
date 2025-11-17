@@ -18,14 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_IMAGE_DIR;
@@ -220,50 +219,69 @@ public class AccommodationServiceImpl implements AccommodationService {
 
     @Override
     @Transactional
-    public void updateAccommodationPhotos(Long id, List<String> photoUrls) {
+    public void updateAccommodationPhotos(Long id, List<MultipartFile> photos) {
         log.info("Updating photos for accommodation with ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
-        Set<String> newUrls = photoUrls == null ? Set.of() : photoUrls.stream()
-                .filter(Objects::nonNull)
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toSet());
+        if (photos != null && !photos.isEmpty()) {
+            List<MultipartFile> validPhotos = photos.stream()
+                    .filter(Objects::nonNull)
+                    .filter(photo -> !photo.isEmpty())
+                    .collect(Collectors.toList());
 
-        Set<String> existingUrls = accommodation.getImages().stream()
-                .map(AccImages::getImageUrl)
-                .collect(Collectors.toSet());
+            if (!validPhotos.isEmpty()) {
+                List<String> uploadedUrls = Objects.requireNonNull(
+                        fileManagerApi.uploadFiles(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, validPhotos, true).getBody()
+                );
 
-        Set<String> toRemove = existingUrls.stream()
-                .filter(url -> !newUrls.contains(url))
-                .collect(Collectors.toSet());
+                uploadedUrls.forEach(url -> accommodation.getImages().add(mapper.toImage(accommodation, url)));
 
-        Set<String> toAdd = newUrls.stream()
-                .filter(url -> !existingUrls.contains(url))
-                .collect(Collectors.toSet());
-
-        if (!toRemove.isEmpty()) {
-            accommodation.getImages().removeIf(img -> toRemove.contains(img.getImageUrl()));
-            toRemove.forEach(url -> {
-                String filename = extractFilename(url);
-                try {
-                    ResponseEntity<String> resp = fileManagerApi.deleteFile(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, filename);
-                    if (resp == null || !resp.getStatusCode().is2xxSuccessful()) {
-                        log.warn("File deletion may have failed for URL: {} (status: {})", url, resp != null ? resp.getStatusCode() : null);
-                    }
-                } catch (Exception ex) {
-                    log.warn("Error while deleting file from file-manager for URL: {}. Continuing DB update. Error: {}", url, ex.getMessage());
-                }
-            });
+                log.info("Added {} new photos for accommodation with ID: {}", uploadedUrls.size(), id);
+            }
         }
-
-        toAdd.forEach(url -> accommodation.getImages().add(mapper.toImage(accommodation, url)));
 
         accommodationRepository.save(accommodation);
 
-        log.info("Updated photos for accommodation with ID: {}. Added: {}, Removed: {}", id, toAdd.size(), toRemove.size());
+        log.info("Successfully updated photos for accommodation with ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccommodationPhoto(Long id, String photoUrl) {
+        log.info("Deleting photo for accommodation with ID: {}, photoUrl: {}", id, photoUrl);
+
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+
+        if (photoUrl == null || photoUrl.trim().isEmpty()) {
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_PHOTO_URL", "Photo URL cannot be empty");
+        }
+
+        String urlToDelete = photoUrl.trim();
+
+        AccImages imageToRemove = accommodation.getImages().stream()
+                .filter(image -> image.getImageUrl().contains(urlToDelete) || urlToDelete.contains(image.getImageUrl()))
+                .findFirst()
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND",
+                        "Photo not found with URL: " + urlToDelete));
+
+        String filename = extractFilename(imageToRemove.getImageUrl());
+
+        try {
+            fileManagerApi.deleteFile(FILE_MANAGER_ACCOMMODATION_IMAGE_DIR, filename);
+            log.info("Deleted file from S3: {}", filename);
+        } catch (Exception ex) {
+            log.error("Error while deleting file from S3: {}. Error: {}", filename, ex.getMessage());
+            throw new DbObjectNotFoundException(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_DELETE_ERROR",
+                    "Failed to delete file from storage: " + ex.getMessage());
+        }
+
+        accommodation.getImages().remove(imageToRemove);
+        accommodationRepository.save(accommodation);
+
+        log.info("Successfully deleted photo for accommodation with ID: {}", id);
     }
 
     private String extractFilename(String url) {
