@@ -12,6 +12,9 @@ import ai.lab.inlive.dto.response.PriceRequestResponse;
 import ai.lab.inlive.dto.response.ReservationResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface AccommodationUnitService {
     void createUnit(AccommodationUnitCreateRequest request);
@@ -27,6 +30,10 @@ public interface AccommodationUnitService {
     void updateUnit(Long id, AccommodationUnitUpdateRequest request);
 
     void updateDictionaries(Long unitId, AccUnitDictionariesUpdateRequest request);
+
+    void updateAccommodationUnitPhotos(Long id, List<MultipartFile> images);
+
+    void deleteAccommodationUnitPhoto(Long id, String photoUrl);
 
     Page<AccSearchRequestResponse> getRelevantRequests(Long unitId, Pageable pageable);
 

@@ -28,10 +28,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR;
 
@@ -246,6 +248,80 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             }
             log.info("Successfully updated {} conditions for unit {}", request.getConditionDictionaryIds().size(), unitId);
         }
+    }
+
+    @Override
+    @Transactional
+    public void updateAccommodationUnitPhotos(Long id, List<MultipartFile> photos) {
+        log.info("Updating photos for accommodation unit with ID: {}", id);
+
+        var unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", "Accommodation Unit not found with ID: " + id));
+
+        if (photos != null && !photos.isEmpty()) {
+            List<MultipartFile> validPhotos = photos.stream()
+                    .filter(Objects::nonNull)
+                    .filter(photo -> !photo.isEmpty())
+                    .collect(Collectors.toList());
+
+            if (!validPhotos.isEmpty()) {
+                List<String> uploadedUrls = Objects.requireNonNull(
+                        fileManagerApi.uploadFiles(FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR, validPhotos, true).getBody()
+                );
+
+                uploadedUrls.forEach(url -> unit.getImages().add(unitMapper.toImage(unit.getAccommodation(), unit, url)));
+
+                log.info("Added {} new photos for accommodation unit with ID: {}", uploadedUrls.size(), id);
+            }
+        }
+
+        accommodationUnitRepository.save(unit);
+
+        log.info("Successfully updated photos for accommodation unit with ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAccommodationUnitPhoto(Long id, String photoUrl) {
+        log.info("Deleting photo for accommodation unit with ID: {}, photoUrl: {}", id, photoUrl);
+
+        var unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", "Accommodation Unit not found with ID: " + id));
+
+        if (photoUrl == null || photoUrl.trim().isEmpty()) {
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_PHOTO_URL", "Photo URL cannot be empty");
+        }
+
+        String urlToDelete = photoUrl.trim();
+
+        AccUnitImages imageToRemove = unit.getImages().stream()
+                .filter(image -> image.getImageUrl().contains(urlToDelete) || urlToDelete.contains(image.getImageUrl()))
+                .findFirst()
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND",
+                        "Photo not found with URL: " + urlToDelete));
+
+        String filename = extractFilename(imageToRemove.getImageUrl());
+
+        try {
+            fileManagerApi.deleteFile(FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR, filename);
+            log.info("Deleted file from S3: {}", filename);
+        } catch (Exception ex) {
+            log.error("Error while deleting file from S3: {}. Error: {}", filename, ex.getMessage());
+            throw new DbObjectNotFoundException(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_DELETE_ERROR",
+                    "Failed to delete file from storage: " + ex.getMessage());
+        }
+
+        unit.getImages().remove(imageToRemove);
+        accommodationUnitRepository.save(unit);
+
+        log.info("Successfully deleted photo for accommodation unit with ID: {}", id);
+    }
+
+    private String extractFilename(String url) {
+        if (url == null) return null;
+        String noQuery = url.split("\\?")[0];
+        int lastSlash = noQuery.lastIndexOf('/');
+        return lastSlash >= 0 ? noQuery.substring(lastSlash + 1) : noQuery;
     }
 
     @Override

@@ -27,6 +27,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -110,7 +113,29 @@ public class AccommodationUnitController {
         accommodationUnitService.updateDictionaries(unitId, request);
         return ResponseEntity.ok().build();
     }
-    
+
+    @Operation(summary = "Обновить фото единицы размещения", description = "Загрузка новых фотографий для единицы размещения")
+    @PutMapping(path = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updateAccommodationUnitPhotos(
+            @Parameter(description = "ID единицы размещения", example = "1")
+            @PathVariable Long id,
+            @RequestPart("images") List<MultipartFile> images) {
+        accommodationUnitService.updateAccommodationUnitPhotos(id, images);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "Удалить конкретное фото единицы размещения",
+               description = "Удаление одной фотографии по её URL или имени файла. Передайте URL фотографии в параметре запроса.")
+    @DeleteMapping(path = "/{id}/photos")
+    public ResponseEntity<Void> deleteAccommodationUnitPhoto(
+            @Parameter(description = "ID единицы размещения", example = "1")
+            @PathVariable Long id,
+            @Parameter(description = "URL или имя файла фотографии для удаления", example = "photo.jpg")
+            @RequestParam String photoUrl) {
+        accommodationUnitService.deleteAccommodationUnitPhoto(id, photoUrl);
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "Получить релевантные заявки для единицы размещения",
                description = "Получение списка активных заявок, которые соответствуют данной квартире/номеру по всем критериям: " +
                        "услуги, условия, район, рейтинг, тип недвижимости. Показываются только заявки со статусами: " +
