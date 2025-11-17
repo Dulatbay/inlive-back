@@ -30,5 +30,9 @@ public class AccommodationCreateRequest {
     @NotNull(message = "Rating is required")
     private Double rating;
 
+    private List<Long> serviceDictionaryIds;
+
+    private List<Long> conditionDictionaryIds;
+
     private List<MultipartFile> images;
 }

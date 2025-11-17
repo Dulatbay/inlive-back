@@ -8,7 +8,6 @@ import ai.lab.inlive.dto.request.AccommodationUnitUpdateRequest;
 import ai.lab.inlive.dto.response.AccSearchRequestResponse;
 import ai.lab.inlive.dto.response.AccUnitTariffResponse;
 import ai.lab.inlive.dto.response.AccommodationUnitResponse;
-import ai.lab.inlive.dto.response.DictionaryResponse;
 import ai.lab.inlive.dto.response.PriceRequestResponse;
 import ai.lab.inlive.dto.response.ReservationResponse;
 import ai.lab.inlive.entities.*;
@@ -16,6 +15,7 @@ import ai.lab.inlive.entities.enums.DictionaryKey;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.mappers.AccommodationUnitMapper;
 import ai.lab.inlive.mappers.AccSearchRequestMapper;
+import ai.lab.inlive.mappers.ImageMapper;
 import ai.lab.inlive.mappers.PriceRequestMapper;
 import ai.lab.inlive.mappers.ReservationMapper;
 import ai.lab.inlive.repositories.*;
@@ -32,7 +32,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR;
 
@@ -40,7 +39,6 @@ import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_
 @Service
 @RequiredArgsConstructor
 public class AccommodationUnitServiceImpl implements AccommodationUnitService {
-
     private final AccommodationRepository accommodationRepository;
     private final AccommodationUnitRepository accommodationUnitRepository;
     private final AccUnitTariffsRepository accUnitTariffsRepository;
@@ -50,6 +48,7 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
     private final PriceRequestRepository priceRequestRepository;
     private final ReservationRepository reservationRepository;
     private final AccommodationUnitMapper unitMapper;
+    private final ImageMapper imageMapper;
     private final AccSearchRequestMapper searchRequestMapper;
     private final PriceRequestMapper priceRequestMapper;
     private final ReservationMapper reservationMapper;
@@ -144,14 +143,14 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
         log.info("Fetching accommodation unit by ID: {}", id);
         AccommodationUnit unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", "Accommodation Unit not found with ID: " + id));
-        return unitMapper.toDto(unit);
+        return unitMapper.toDto(unit, imageMapper);
     }
 
     @Override
     public Page<AccommodationUnitResponse> searchWithParams(AccommodationUnitSearchParams params, Pageable pageable) {
         log.info("Searching accommodation units with params: {}", params);
         var page = accommodationUnitRepository.findWithFilters(params, pageable);
-        return page.map(unitMapper::toDto);
+        return page.map(unit -> unitMapper.toDto(unit, imageMapper));
     }
 
     @Override
@@ -206,14 +205,11 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND",
                         "Accommodation Unit not found with ID: " + unitId));
 
-        // Обновляем услуги (SERVICES)
         if (request.getServiceDictionaryIds() != null) {
             log.info("Updating services for unit: {}", unitId);
-            // Удаляем старые связи с услугами
             accUnitDictionaryRepository.deleteByUnitAndDictionaryKey(unit, DictionaryKey.ACC_SERVICE);
             accUnitDictionaryRepository.flush();
 
-            // Добавляем новые услуги
             for (Long dictionaryId : request.getServiceDictionaryIds()) {
                 Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
                         .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
@@ -230,14 +226,11 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             log.info("Successfully updated {} services for unit {}", request.getServiceDictionaryIds().size(), unitId);
         }
 
-        // Обновляем условия (CONDITIONS)
         if (request.getConditionDictionaryIds() != null) {
             log.info("Updating conditions for unit: {}", unitId);
-            // Удаляем старые связи с условиями
             accUnitDictionaryRepository.deleteByUnitAndDictionaryKey(unit, DictionaryKey.ACC_CONDITION);
             accUnitDictionaryRepository.flush();
 
-            // Добавляем новые условия
             for (Long dictionaryId : request.getConditionDictionaryIds()) {
                 Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
                         .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
@@ -257,49 +250,13 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DictionaryResponse> getUnitServices(Long unitId) {
-        log.info("Fetching services for unit: {}", unitId);
-        AccommodationUnit unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND",
-                        "Accommodation Unit not found with ID: " + unitId));
-
-        List<AccUnitDictionary> serviceDictionaries = accUnitDictionaryRepository
-                .findByUnitAndDictionaryKey(unit, DictionaryKey.ACC_SERVICE);
-
-        return serviceDictionaries.stream()
-                .map(AccUnitDictionary::getDictionary)
-                .map(unitMapper::dictionaryToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DictionaryResponse> getUnitConditions(Long unitId) {
-        log.info("Fetching conditions for unit: {}", unitId);
-        AccommodationUnit unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND",
-                        "Accommodation Unit not found with ID: " + unitId));
-
-        List<AccUnitDictionary> conditionDictionaries = accUnitDictionaryRepository
-                .findByUnitAndDictionaryKey(unit, DictionaryKey.ACC_CONDITION);
-
-        return conditionDictionaries.stream()
-                .map(AccUnitDictionary::getDictionary)
-                .map(unitMapper::dictionaryToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public Page<AccSearchRequestResponse> getRelevantRequests(Long unitId, Pageable pageable) {
         log.info("Fetching relevant search requests for unit: {}", unitId);
 
-        // Проверяем что unit существует
-        AccommodationUnit unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
+        accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND",
                         "Accommodation Unit not found with ID: " + unitId));
 
-        // Получаем релевантные заявки
         Page<AccSearchRequest> requests = accSearchRequestRepository.findRelevantRequestsForUnit(unitId, pageable);
 
         log.info("Found {} relevant requests for unit {}", requests.getTotalElements(), unitId);

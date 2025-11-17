@@ -14,7 +14,7 @@ import org.mapstruct.Named;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {ImageMapper.class})
 public interface AccommodationUnitMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "accommodation", ignore = true)
@@ -41,12 +41,13 @@ public interface AccommodationUnitMapper {
     @Mapping(target = "dictionary", source = "dictionary")
     AccUnitDictionary toDictionaryLink(Accommodation accommodation, AccommodationUnit unit, Dictionary dictionary);
 
-    @Mapping(target = "accommodationId", source = "accommodation.id")
+    @Mapping(target = "accommodationId", source = "unit.accommodation.id")
     @Mapping(target = "unitType", expression = "java(unit.getUnitType() != null ? unit.getUnitType().name() : null)")
     @Mapping(target = "services", expression = "java(extractDictionariesByKey(unit, ai.lab.inlive.entities.enums.DictionaryKey.ACC_SERVICE))")
     @Mapping(target = "conditions", expression = "java(extractDictionariesByKey(unit, ai.lab.inlive.entities.enums.DictionaryKey.ACC_CONDITION))")
     @Mapping(target = "tariffs", expression = "java(mapTariffs(unit))")
-    AccommodationUnitResponse toDto(AccommodationUnit unit);
+    @Mapping(target = "imageUrls", expression = "java(imageMapper.getPathToAccommodationUnitImages(unit))")
+    AccommodationUnitResponse toDto(AccommodationUnit unit, ImageMapper imageMapper);
 
     @Mapping(target = "key", expression = "java(dictionary.getKey().name())")
     DictionaryResponse dictionaryToDto(Dictionary dictionary);

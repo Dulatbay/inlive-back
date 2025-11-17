@@ -2,6 +2,7 @@ package ai.lab.inlive.services;
 
 import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
+import ai.lab.inlive.dto.request.AccommodationDictionariesUpdateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import jakarta.transaction.Transactional;
@@ -20,6 +21,8 @@ public interface AccommodationService {
 
     @Transactional
     void updateAccommodation(Long id, AccommodationUpdateRequest request);
+
+    void updateDictionaries(Long accommodationId, AccommodationDictionariesUpdateRequest request);
 
     void updateAccommodationPhotos(Long id, List<String> photoUrls);
 

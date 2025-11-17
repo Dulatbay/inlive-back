@@ -43,4 +43,7 @@ public class AccommodationUnitResponse {
 
     @Schema(description = "Список тарифов")
     private Set<AccUnitTariffResponse> tariffs;
+
+    @Schema(description = "Список URL изображений")
+    private Set<String> imageUrls;
 }

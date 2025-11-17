@@ -1,5 +1,6 @@
 package ai.lab.inlive.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.util.Set;
@@ -18,5 +19,12 @@ public class AccommodationResponse {
     private Boolean approved;
     private Long approvedBy;
     private Long ownerId;
+
+    @Schema(description = "Список предоставляемых услуг")
+    private Set<DictionaryResponse> services;
+
+    @Schema(description = "Список условий проживания")
+    private Set<DictionaryResponse> conditions;
+
     private Set<String> imageUrls;
 }

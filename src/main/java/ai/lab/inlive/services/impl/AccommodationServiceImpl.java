@@ -2,20 +2,15 @@ package ai.lab.inlive.services.impl;
 
 import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
+import ai.lab.inlive.dto.request.AccommodationDictionariesUpdateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
-import ai.lab.inlive.entities.AccImages;
-import ai.lab.inlive.entities.Accommodation;
-import ai.lab.inlive.entities.City;
-import ai.lab.inlive.entities.District;
-import ai.lab.inlive.entities.User;
+import ai.lab.inlive.entities.*;
+import ai.lab.inlive.entities.enums.DictionaryKey;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.mappers.AccommodationMapper;
 import ai.lab.inlive.mappers.ImageMapper;
-import ai.lab.inlive.repositories.AccommodationRepository;
-import ai.lab.inlive.repositories.CityRepository;
-import ai.lab.inlive.repositories.DistrictRepository;
-import ai.lab.inlive.repositories.UserRepository;
+import ai.lab.inlive.repositories.*;
 import ai.lab.inlive.services.AccommodationService;
 import ai.lab.inlivefilemanager.client.api.FileManagerApi;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +42,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final DistrictRepository districtRepository;
     private final UserRepository userRepository;
     private final FileManagerApi fileManagerApi;
+    private final DictionaryRepository dictionaryRepository;
+    private final AccDictionaryRepository accDictionaryRepository;
 
     @Override
     @Transactional
@@ -54,6 +51,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Creating accommodation with name: {}", request.getName());
 
         var images = new HashSet<AccImages>();
+        var accDictionaries = new HashSet<AccDictionary>();
 
         var city = cityRepository.findById(request.getCityId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
@@ -66,9 +64,34 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         accommodation.setCity(city);
         accommodation.setDistrict(district);
-        accommodation.setRating(request.getRating());
         accommodation.setOwnerId(owner);
         accommodation.setApproved(null);
+
+        if (request.getServiceDictionaryIds() != null) {
+            request.getServiceDictionaryIds()
+                    .forEach(serviceDictionaryId -> {
+                        var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(serviceDictionaryId)
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + serviceDictionaryId));
+                        if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + serviceDictionaryId + " must have key ACC_SERVICE");
+                        }
+                        accDictionaries.add(mapper.toDictionaryLink(accommodation, dictionary));
+                    });
+        }
+
+        if (request.getConditionDictionaryIds() != null) {
+            request.getConditionDictionaryIds()
+                    .forEach(conditionDictionaryId -> {
+                        var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(conditionDictionaryId)
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + conditionDictionaryId));
+                        if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + conditionDictionaryId + " must have key ACC_CONDITION");
+                        }
+                        accDictionaries.add(mapper.toDictionaryLink(accommodation, dictionary));
+                    });
+        }
+
+        accommodation.setDictionaries(accDictionaries);
 
         if (request.getImages() != null) {
             request.getImages()
@@ -142,6 +165,57 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         accommodationRepository.save(accommodation);
         log.info("Successfully updated accommodation with ID: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void updateDictionaries(Long accommodationId, AccommodationDictionariesUpdateRequest request) {
+        log.info("Updating dictionaries for accommodation: {}", accommodationId);
+        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND",
+                        "Accommodation not found with ID: " + accommodationId));
+
+        if (request.getServiceDictionaryIds() != null) {
+            log.info("Updating services for accommodation: {}", accommodationId);
+            accDictionaryRepository.deleteByAccommodationAndDictionaryKey(accommodation, DictionaryKey.ACC_SERVICE);
+            accDictionaryRepository.flush();
+
+            for (Long dictionaryId : request.getServiceDictionaryIds()) {
+                Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
+                        .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
+                                "Dictionary not found with ID: " + dictionaryId));
+
+                if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
+                    throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY",
+                            "Dictionary ID " + dictionaryId + " must have key ACC_SERVICE");
+                }
+
+                AccDictionary link = mapper.toDictionaryLink(accommodation, dictionary);
+                accDictionaryRepository.save(link);
+            }
+            log.info("Successfully updated {} services for accommodation {}", request.getServiceDictionaryIds().size(), accommodationId);
+        }
+
+        if (request.getConditionDictionaryIds() != null) {
+            log.info("Updating conditions for accommodation: {}", accommodationId);
+            accDictionaryRepository.deleteByAccommodationAndDictionaryKey(accommodation, DictionaryKey.ACC_CONDITION);
+            accDictionaryRepository.flush();
+
+            for (Long dictionaryId : request.getConditionDictionaryIds()) {
+                Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
+                        .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
+                                "Dictionary not found with ID: " + dictionaryId));
+
+                if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
+                    throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY",
+                            "Dictionary ID " + dictionaryId + " must have key ACC_CONDITION");
+                }
+
+                AccDictionary link = mapper.toDictionaryLink(accommodation, dictionary);
+                accDictionaryRepository.save(link);
+            }
+            log.info("Successfully updated {} conditions for accommodation {}", request.getConditionDictionaryIds().size(), accommodationId);
+        }
     }
 
     @Override

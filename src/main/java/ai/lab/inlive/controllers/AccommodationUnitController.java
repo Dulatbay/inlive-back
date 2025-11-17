@@ -9,7 +9,6 @@ import ai.lab.inlive.dto.request.AccommodationUnitUpdateRequest;
 import ai.lab.inlive.dto.response.AccSearchRequestResponse;
 import ai.lab.inlive.dto.response.AccUnitTariffResponse;
 import ai.lab.inlive.dto.response.AccommodationUnitResponse;
-import ai.lab.inlive.dto.response.DictionaryResponse;
 import ai.lab.inlive.dto.response.PriceRequestResponse;
 import ai.lab.inlive.dto.response.ReservationResponse;
 import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
@@ -28,8 +27,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -113,27 +110,7 @@ public class AccommodationUnitController {
         accommodationUnitService.updateDictionaries(unitId, request);
         return ResponseEntity.ok().build();
     }
-
-    @Operation(summary = "Получить список услуг единицы размещения",
-               description = "Получение всех услуг (SERVICES), предоставляемых в данной квартире/номере")
-    @GetMapping("/{unitId}/services")
-    public ResponseEntity<List<DictionaryResponse>> getUnitServices(
-            @Parameter(description = "ID единицы размещения", example = "1")
-            @PathVariable Long unitId) {
-        List<DictionaryResponse> services = accommodationUnitService.getUnitServices(unitId);
-        return ResponseEntity.ok(services);
-    }
-
-    @Operation(summary = "Получить список условий единицы размещения",
-               description = "Получение всех условий проживания (CONDITIONS) для данной квартиры/номера")
-    @GetMapping("/{unitId}/conditions")
-    public ResponseEntity<List<DictionaryResponse>> getUnitConditions(
-            @Parameter(description = "ID единицы размещения", example = "1")
-            @PathVariable Long unitId) {
-        List<DictionaryResponse> conditions = accommodationUnitService.getUnitConditions(unitId);
-        return ResponseEntity.ok(conditions);
-    }
-
+    
     @Operation(summary = "Получить релевантные заявки для единицы размещения",
                description = "Получение списка активных заявок, которые соответствуют данной квартире/номеру по всем критериям: " +
                        "услуги, условия, район, рейтинг, тип недвижимости. Показываются только заявки со статусами: " +

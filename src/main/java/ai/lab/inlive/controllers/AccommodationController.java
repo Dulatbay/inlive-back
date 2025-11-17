@@ -3,6 +3,7 @@ package ai.lab.inlive.controllers;
 import ai.lab.inlive.dto.base.PaginatedResponse;
 import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
+import ai.lab.inlive.dto.request.AccommodationDictionariesUpdateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
@@ -80,6 +81,18 @@ public class AccommodationController {
             @PathVariable Long id,
             @RequestBody @Valid AccommodationUpdateRequest request) {
         accommodationService.updateAccommodation(id, request);
+        return ResponseEntity.ok().build();
+    }
+
+    @AccessForAdminsAndSuperManagers
+    @Operation(summary = "Обновить услуги и условия размещения",
+               description = "Обновление списков услуг (SERVICES) и условий (CONDITIONS) для размещения. Существующие списки будут заменены новыми.")
+    @PutMapping(value = "/{id}/dictionaries", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> updateDictionaries(
+            @Parameter(description = "ID размещения", example = "1")
+            @PathVariable Long id,
+            @RequestBody @Valid AccommodationDictionariesUpdateRequest request) {
+        accommodationService.updateDictionaries(id, request);
         return ResponseEntity.ok().build();
     }
 
