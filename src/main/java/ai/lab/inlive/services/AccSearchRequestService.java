@@ -7,13 +7,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AccSearchRequestService {
-    AccSearchRequestResponse createSearchRequest(AccSearchRequestCreateRequest request, String authorId);
+    void createSearchRequest(AccSearchRequestCreateRequest request, String authorId);
 
     AccSearchRequestResponse getSearchRequestById(Long id);
 
     Page<AccSearchRequestResponse> getMySearchRequests(String authorId, Pageable pageable);
 
-    AccSearchRequestResponse updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, String authorId);
+    void updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, String authorId);
 
-    AccSearchRequestResponse cancelSearchRequest(Long id, String authorId);
+    void cancelSearchRequest(Long id, String authorId);
 }

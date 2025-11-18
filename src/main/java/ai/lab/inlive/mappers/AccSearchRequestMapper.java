@@ -16,8 +16,8 @@ public interface AccSearchRequestMapper {
 
     @Mapping(target = "authorId", source = "author.id")
     @Mapping(target = "authorName", expression = "java(getAuthorName(request))")
-    @Mapping(target = "checkInDate", source = "fromDate")
-    @Mapping(target = "checkOutDate", source = "toDate")
+    @Mapping(target = "checkInDate", expression = "java(request.getFromDate() != null ? request.getFromDate().toLocalDate() : null)")
+    @Mapping(target = "checkOutDate", expression = "java(request.getToDate() != null ? request.getToDate().toLocalDate() : null)")
     @Mapping(target = "status", expression = "java(request.getStatus() != null ? request.getStatus().name() : null)")
     @Mapping(target = "unitTypes", expression = "java(extractUnitTypes(request))")
     @Mapping(target = "districts", expression = "java(extractDistricts(request))")

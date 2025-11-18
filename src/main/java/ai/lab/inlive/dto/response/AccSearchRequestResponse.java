@@ -3,6 +3,7 @@ package ai.lab.inlive.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -24,11 +25,11 @@ public class AccSearchRequestResponse {
     @Schema(description = "Максимальный рейтинг", example = "5.0")
     private Double toRating;
 
-    @Schema(description = "Дата заезда (check-in)", example = "2024-12-01T14:00:00")
-    private LocalDateTime checkInDate;
+    @Schema(description = "Дата заезда (check-in)", example = "2024-12-01")
+    private LocalDate checkInDate;
 
-    @Schema(description = "Дата выезда (check-out)", example = "2024-12-05T12:00:00")
-    private LocalDateTime checkOutDate;
+    @Schema(description = "Дата выезда (check-out)", example = "2024-12-05")
+    private LocalDate checkOutDate;
 
     @Schema(description = "На одну ночь", example = "false")
     private Boolean oneNight;

@@ -39,12 +39,12 @@ public class AccSearchRequestController {
                     "ЕСЛИ к запросу есть соответствующие отели/квартиры, то создаем успешно запрос, " +
                     "иначе просим пользователя пересмотреть запрошенные параметры.")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccSearchRequestResponse> createSearchRequest(@RequestBody @Valid AccSearchRequestCreateRequest request) {
+    public ResponseEntity<Void> createSearchRequest(@RequestBody @Valid AccSearchRequestCreateRequest request) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var authorId = Utils.extractIdFromToken(token);
 
-        AccSearchRequestResponse response = accSearchRequestService.createSearchRequest(request, authorId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        accSearchRequestService.createSearchRequest(request, authorId);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @AccessForAdminsAndClients
@@ -54,8 +54,7 @@ public class AccSearchRequestController {
     public ResponseEntity<AccSearchRequestResponse> getSearchRequestById(
             @Parameter(description = "ID заявки на поиск", example = "1")
             @PathVariable Long id) {
-        AccSearchRequestResponse response = accSearchRequestService.getSearchRequestById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(accSearchRequestService.getSearchRequestById(id));
     }
 
     @AccessForAdminsAndClients
@@ -86,15 +85,15 @@ public class AccSearchRequestController {
                     "Другие параметры (район, услуги, условия, даты, количество людей) изменить нельзя. " +
                     "Если заявка не действительна, её нужно отменить.")
     @PatchMapping(value = "/{id}/price", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<AccSearchRequestResponse> updateSearchRequestPrice(
+    public ResponseEntity<Void> updateSearchRequestPrice(
             @Parameter(description = "ID заявки на поиск", example = "1")
             @PathVariable Long id,
             @RequestBody @Valid AccSearchRequestUpdatePriceRequest request) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var authorId = Utils.extractIdFromToken(token);
 
-        AccSearchRequestResponse response = accSearchRequestService.updateSearchRequestPrice(id, request, authorId);
-        return ResponseEntity.ok(response);
+        accSearchRequestService.updateSearchRequestPrice(id, request, authorId);
+        return ResponseEntity.ok().build();
     }
 
     @AccessForAdminsAndClients
@@ -102,13 +101,13 @@ public class AccSearchRequestController {
             description = "Если заявка не действительна (ошибочные данные, изменились планы и т.д.), " +
                     "её нужно отменить, так как изменение основных параметров заявки не допускается")
     @PatchMapping("/{id}/cancel")
-    public ResponseEntity<AccSearchRequestResponse> cancelSearchRequest(
+    public ResponseEntity<Void> cancelSearchRequest(
             @Parameter(description = "ID заявки на поиск", example = "1")
             @PathVariable Long id) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var authorId = Utils.extractIdFromToken(token);
 
-        AccSearchRequestResponse response = accSearchRequestService.cancelSearchRequest(id, authorId);
-        return ResponseEntity.ok(response);
+        accSearchRequestService.cancelSearchRequest(id, authorId);
+        return ResponseEntity.noContent().build();
     }
 }

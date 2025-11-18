@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -38,10 +39,25 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
     @Override
     @Transactional
-    public AccSearchRequestResponse createSearchRequest(AccSearchRequestCreateRequest request, String authorId) {
+    public void createSearchRequest(AccSearchRequestCreateRequest request, String authorId) {
         log.info("Creating search request for user: {}", authorId);
 
-        if (request.getCheckOutDate().isBefore(request.getCheckInDate())) {
+        LocalDateTime checkInDateTime = request.getCheckInDate().atTime(12, 0);
+        LocalDateTime checkOutDateTime;
+
+        if (Boolean.TRUE.equals(request.getOneNight())) {
+            checkOutDateTime = request.getCheckInDate().plusDays(1).atTime(12, 0);
+            log.info("One night stay: checkOut automatically set to {}", checkOutDateTime);
+        } else {
+            if (request.getCheckOutDate() == null) {
+                throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
+                        "CHECKOUT_DATE_REQUIRED",
+                        "Check-out date is required when oneNight is false or not specified");
+            }
+            checkOutDateTime = request.getCheckOutDate().atTime(12, 0);
+        }
+
+        if (checkOutDateTime.isBefore(checkInDateTime) || checkOutDateTime.isEqual(checkInDateTime)) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_DATES",
                     "Check-out date must be after check-in date");
@@ -103,9 +119,9 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
         AccSearchRequest searchRequest = new AccSearchRequest();
         searchRequest.setAuthor(author);
-        searchRequest.setFromDate(request.getCheckInDate());
-        searchRequest.setToDate(request.getCheckOutDate());
-        searchRequest.setOneNight(request.getOneNight() != null ? request.getOneNight() : false);
+        searchRequest.setFromDate(checkInDateTime);
+        searchRequest.setToDate(checkOutDateTime);
+        searchRequest.setOneNight(Boolean.TRUE.equals(request.getOneNight()));
         searchRequest.setPrice(request.getPrice());
         searchRequest.setCountOfPeople(request.getCountOfPeople());
         searchRequest.setFromRating(request.getFromRating());
@@ -150,7 +166,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         saved = accSearchRequestRepository.save(saved);
 
         log.info("Successfully created search request with ID: {} for user: {}", saved.getId(), authorId);
-        return searchRequestMapper.toDto(saved);
     }
 
     private boolean checkAvailableUnits(AccSearchRequestCreateRequest request,
@@ -242,7 +257,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
     @Transactional(readOnly = true)
     public AccSearchRequestResponse getSearchRequestById(Long id) {
         log.info("Fetching search request by ID: {}", id);
-        AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
+        var searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
                         "Search request not found with ID: " + id));
@@ -259,10 +274,10 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
     @Override
     @Transactional
-    public AccSearchRequestResponse updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, String authorId) {
+    public void updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, String authorId) {
         log.info("Updating price for search request ID: {} by user: {}", id, authorId);
 
-        AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
+        var searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
                         "Search request not found with ID: " + id));
@@ -286,15 +301,14 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
 
         searchRequest.setPrice(request.getPrice());
-        AccSearchRequest updated = accSearchRequestRepository.save(searchRequest);
+        accSearchRequestRepository.save(searchRequest);
 
         log.info("Successfully updated price for search request ID: {}", id);
-        return searchRequestMapper.toDto(updated);
     }
 
     @Override
     @Transactional
-    public AccSearchRequestResponse cancelSearchRequest(Long id, String authorId) {
+    public void cancelSearchRequest(Long id, String authorId) {
         log.info("Cancelling search request ID: {} by user: {}", id, authorId);
 
         AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
@@ -321,9 +335,8 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
 
         searchRequest.setStatus(SearchRequestStatus.CANCELLED);
-        AccSearchRequest cancelled = accSearchRequestRepository.save(searchRequest);
+        accSearchRequestRepository.save(searchRequest);
 
         log.info("Successfully cancelled search request ID: {}", id);
-        return searchRequestMapper.toDto(cancelled);
     }
 }

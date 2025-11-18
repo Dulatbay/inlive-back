@@ -5,23 +5,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Data
 @Schema(description = "Запрос на создание заявки на поиск жилья (для CLIENT)")
 public class AccSearchRequestCreateRequest {
-
     @NotNull(message = "Check-in date is required")
     @FutureOrPresent(message = "Check-in date must be today or in the future")
-    @Schema(description = "Дата заезда (check-in)", example = "2024-12-01T14:00:00")
-    private LocalDateTime checkInDate;
+    @Schema(description = "Дата заезда (check-in)", example = "2025-12-01")
+    private LocalDate checkInDate;
 
-    @NotNull(message = "Check-out date is required")
-    @Schema(description = "Дата выезда (check-out)", example = "2024-12-05T12:00:00")
-    private LocalDateTime checkOutDate;
+    @Schema(description = "Дата выезда (check-out). Опциональна, если указан флаг oneNight", example = "2025-12-05")
+    private LocalDate checkOutDate;
 
-    @Schema(description = "Флаг 'на одну ночь'", example = "false")
+    @Schema(description = "Флаг 'на одну ночь'. Если true, checkOutDate = checkInDate + 1 день", example = "false")
     private Boolean oneNight;
 
     @NotNull(message = "Price is required")
