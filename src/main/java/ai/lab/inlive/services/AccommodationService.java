@@ -27,7 +27,7 @@ public interface AccommodationService {
 
     void updateAccommodationPhotos(Long id, List<MultipartFile> photoUrls);
 
-    void deleteAccommodationPhoto(Long id, String photoUrl);
+    void deleteAccommodationPhotos(Long id, List<String> photoUrls);
 
     @Transactional
     void deleteAccommodation(Long id);

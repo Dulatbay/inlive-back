@@ -107,15 +107,14 @@ public class AccommodationController {
         return ResponseEntity.ok().build();
     }
 
-    @Operation(summary = "Удалить конкретное фото размещения",
-               description = "Удаление одной фотографии по её URL или имени файла. Передайте URL фотографии в параметре запроса.")
-    @DeleteMapping(path = "/{id}/photos")
-    public ResponseEntity<Void> deleteAccommodationPhoto(
+    @Operation(summary = "Удалить фотографии размещения",
+               description = "Удаление выбранных фотографий по списку их URL или имен файлов. Передайте список URL в теле запроса.")
+    @DeleteMapping(path = "/{id}/photos", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> deleteAccommodationPhotos(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id,
-            @Parameter(description = "URL или имя файла фотографии для удаления", example = "photo.jpg")
-            @RequestParam String photoUrl) {
-        accommodationService.deleteAccommodationPhoto(id, photoUrl);
+            @RequestBody List<String> photoUrls) {
+        accommodationService.deleteAccommodationPhotos(id, photoUrls);
         return ResponseEntity.ok().build();
     }
 

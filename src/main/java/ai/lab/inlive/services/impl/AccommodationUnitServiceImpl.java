@@ -282,39 +282,63 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
     @Override
     @Transactional
-    public void deleteAccommodationUnitPhoto(Long id, String photoUrl) {
-        log.info("Deleting photo for accommodation unit with ID: {}, photoUrl: {}", id, photoUrl);
+    public void deleteAccommodationUnitPhotos(Long id, List<String> photoUrls) {
+        log.info("Deleting photos for accommodation unit with ID: {}", id);
 
         var unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", "Accommodation Unit not found with ID: " + id));
 
-        if (photoUrl == null || photoUrl.trim().isEmpty()) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_PHOTO_URL", "Photo URL cannot be empty");
+        if (photoUrls == null || photoUrls.isEmpty()) {
+            log.warn("No photo URLs provided for deletion");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Photo URLs list cannot be empty");
         }
 
-        String urlToDelete = photoUrl.trim();
+        List<String> urlsToDelete = photoUrls.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(url -> !url.isEmpty())
+                .toList();
 
-        AccUnitImages imageToRemove = unit.getImages().stream()
-                .filter(image -> image.getImageUrl().contains(urlToDelete) || urlToDelete.contains(image.getImageUrl()))
-                .findFirst()
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "PHOTO_NOT_FOUND",
-                        "Photo not found with URL: " + urlToDelete));
-
-        String filename = extractFilename(imageToRemove.getImageUrl());
-
-        try {
-            fileManagerApi.deleteFile(FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR, filename);
-            log.info("Deleted file from S3: {}", filename);
-        } catch (Exception ex) {
-            log.error("Error while deleting file from S3: {}. Error: {}", filename, ex.getMessage());
-            throw new DbObjectNotFoundException(HttpStatus.INTERNAL_SERVER_ERROR, "FILE_DELETE_ERROR",
-                    "Failed to delete file from storage: " + ex.getMessage());
+        if (urlsToDelete.isEmpty()) {
+            log.warn("No valid photo URLs provided for deletion");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "No valid photo URLs provided");
         }
 
-        unit.getImages().remove(imageToRemove);
-        accommodationUnitRepository.save(unit);
+        int deletedCount = 0;
+        int failedCount = 0;
 
-        log.info("Successfully deleted photo for accommodation unit with ID: {}", id);
+        var imagesToRemove = unit.getImages().stream()
+                .filter(image -> urlsToDelete.stream().anyMatch(url ->
+                    image.getImageUrl().contains(url) || url.contains(image.getImageUrl())))
+                .toList();
+
+        if (imagesToRemove.isEmpty()) {
+            log.warn("No matching photos found for deletion");
+            throw new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "PHOTOS_NOT_FOUND",
+                    "No photos found matching the provided URLs");
+        }
+
+        for (AccUnitImages image : imagesToRemove) {
+            String filename = extractFilename(image.getImageUrl());
+            try {
+                fileManagerApi.deleteFile(FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR, filename);
+                log.info("Deleted file from S3: {}", filename);
+                unit.getImages().remove(image);
+                deletedCount++;
+            } catch (Exception ex) {
+                log.error("Error while deleting file from S3: {}. Error: {}", filename, ex.getMessage());
+                failedCount++;
+            }
+        }
+
+        if (deletedCount > 0) {
+            accommodationUnitRepository.save(unit);
+            log.info("Successfully deleted {} photos for accommodation unit with ID: {}. Failed: {}",
+                    deletedCount, id, failedCount);
+        } else {
+            throw new DbObjectNotFoundException(HttpStatus.INTERNAL_SERVER_ERROR, "DELETE_FAILED",
+                    "Failed to delete any photos from storage");
+        }
     }
 
     private String extractFilename(String url) {

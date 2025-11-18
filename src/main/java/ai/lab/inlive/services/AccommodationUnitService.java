@@ -33,7 +33,7 @@ public interface AccommodationUnitService {
 
     void updateAccommodationUnitPhotos(Long id, List<MultipartFile> images);
 
-    void deleteAccommodationUnitPhoto(Long id, String photoUrl);
+    void deleteAccommodationUnitPhotos(Long id, List<String> photoUrls);
 
     Page<AccSearchRequestResponse> getRelevantRequests(Long unitId, Pageable pageable);
 
