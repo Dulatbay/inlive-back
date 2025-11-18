@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_IMAGE_DIR;
+import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR;
 
 @Component
 public class ImageMapper {
@@ -23,7 +24,7 @@ public class ImageMapper {
 
     public Set<String> getPathToAccommodationUnitImages(AccommodationUnit accommodationUnit) {
         return accommodationUnit.getImages().stream()
-                .map(image -> fileApiUrl + "/" + FILE_MANAGER_ACCOMMODATION_IMAGE_DIR + "/retrieve/files/" + image.getImageUrl())
+                .map(image -> fileApiUrl + "/" + FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR + "/retrieve/files/" + image.getImageUrl())
                 .collect(Collectors.toSet());
     }
 }
