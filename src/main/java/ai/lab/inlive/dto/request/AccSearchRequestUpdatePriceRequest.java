@@ -10,7 +10,7 @@ import lombok.Data;
 public class AccSearchRequestUpdatePriceRequest {
     @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
-    @Schema(description = "Новая цена", example = "50000.0", required = true)
+    @Schema(description = "Новая цена", example = "50000.0")
     private Double price;
 }
 

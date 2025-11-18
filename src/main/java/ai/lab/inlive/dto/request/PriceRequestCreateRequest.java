@@ -9,16 +9,16 @@ import lombok.Data;
 @Schema(description = "Запрос на создание заявки цены")
 public class PriceRequestCreateRequest {
     @NotNull(message = "Search request ID is required")
-    @Schema(description = "ID заявки на поиск жилья", example = "1", required = true)
+    @Schema(description = "ID заявки на поиск жилья", example = "1")
     private Long searchRequestId;
 
     @NotNull(message = "Accommodation unit ID is required")
-    @Schema(description = "ID единицы размещения", example = "1", required = true)
+    @Schema(description = "ID единицы размещения", example = "1")
     private Long accommodationUnitId;
 
     @NotNull(message = "Price is required")
     @DecimalMin(value = "0.0", message = "Price must be non-negative")
-    @Schema(description = "Предлагаемая цена", example = "50000.0", required = true)
+    @Schema(description = "Предлагаемая цена", example = "50000.0")
     private Double price;
 }
 

@@ -11,7 +11,6 @@ public class ReservationUpdateRequest {
     @NotNull(message = "Status is required")
     @Schema(description = "Новый статус бронирования (APPROVED - принять, REJECTED - отказать)",
             example = "APPROVED",
-            required = true,
             allowableValues = {"APPROVED", "REJECTED"})
     private ReservationStatus status;
 }
