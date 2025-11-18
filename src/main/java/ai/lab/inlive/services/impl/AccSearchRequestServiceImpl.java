@@ -38,23 +38,18 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
     @Override
     @Transactional
-    public AccSearchRequestResponse createSearchRequest(AccSearchRequestCreateRequest request, Long authorId) {
+    public AccSearchRequestResponse createSearchRequest(AccSearchRequestCreateRequest request, String authorId) {
         log.info("Creating search request for user: {}", authorId);
 
-        // Валидация дат
-        if (request.getToDate().isBefore(request.getFromDate())) {
+        if (request.getCheckOutDate().isBefore(request.getCheckInDate())) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_DATES",
-                    "To date must be after from date");
+                    "Check-out date must be after check-in date");
         }
 
-        // Проверяем автора
-        User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
-                        "USER_NOT_FOUND",
-                        "User not found with ID: " + authorId));
+        var author = userRepository.findByKeycloakId(authorId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + authorId));
 
-        // Проверяем районы
         List<District> districts = new ArrayList<>();
         for (Long districtId : request.getDistrictIds()) {
             District district = districtRepository.findById(districtId)
@@ -64,7 +59,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             districts.add(district);
         }
 
-        // Проверяем услуги
         List<Dictionary> services = new ArrayList<>();
         if (request.getServiceDictionaryIds() != null && !request.getServiceDictionaryIds().isEmpty()) {
             for (Long serviceId : request.getServiceDictionaryIds()) {
@@ -81,7 +75,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             }
         }
 
-        // Проверяем условия
         List<Dictionary> conditions = new ArrayList<>();
         if (request.getConditionDictionaryIds() != null && !request.getConditionDictionaryIds().isEmpty()) {
             for (Long conditionId : request.getConditionDictionaryIds()) {
@@ -98,7 +91,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             }
         }
 
-        // ПРОВЕРКА НАЛИЧИЯ ПОДХОДЯЩИХ ВАРИАНТОВ
         boolean hasMatchingUnits = checkAvailableUnits(request, districts, services, conditions);
 
         if (!hasMatchingUnits) {
@@ -109,11 +101,10 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                     "проверьте район, тип недвижимости, необходимые услуги и условия проживания.");
         }
 
-        // Создаем заявку
         AccSearchRequest searchRequest = new AccSearchRequest();
         searchRequest.setAuthor(author);
-        searchRequest.setFromDate(request.getFromDate());
-        searchRequest.setToDate(request.getToDate());
+        searchRequest.setFromDate(request.getCheckInDate());
+        searchRequest.setToDate(request.getCheckOutDate());
         searchRequest.setOneNight(request.getOneNight() != null ? request.getOneNight() : false);
         searchRequest.setPrice(request.getPrice());
         searchRequest.setCountOfPeople(request.getCountOfPeople());
@@ -121,10 +112,8 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         searchRequest.setToRating(request.getToRating());
         searchRequest.setStatus(SearchRequestStatus.OPEN_TO_PRICE_REQUEST);
 
-        // Сохраняем заявку
         AccSearchRequest saved = accSearchRequestRepository.save(searchRequest);
 
-        // Добавляем типы недвижимости
         Set<AccSearchRequestUnitType> unitTypes = new HashSet<>();
         for (UnitType unitType : request.getUnitTypes()) {
             AccSearchRequestUnitType requestUnitType = new AccSearchRequestUnitType();
@@ -134,7 +123,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
         saved.setUnitTypes(unitTypes);
 
-        // Добавляем районы
         Set<AccSearchRequestDistrict> requestDistricts = new HashSet<>();
         for (District district : districts) {
             AccSearchRequestDistrict requestDistrict = new AccSearchRequestDistrict();
@@ -144,7 +132,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
         saved.setDistricts(requestDistricts);
 
-        // Добавляем словари (услуги и условия)
         Set<AccSearchRequestDictionary> dictionaries = new HashSet<>();
         for (Dictionary service : services) {
             AccSearchRequestDictionary dict = new AccSearchRequestDictionary();
@@ -160,28 +147,22 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
         saved.setDictionaries(dictionaries);
 
-        // Сохраняем с связями
         saved = accSearchRequestRepository.save(saved);
 
         log.info("Successfully created search request with ID: {} for user: {}", saved.getId(), authorId);
         return searchRequestMapper.toDto(saved);
     }
 
-    /**
-     * Проверяет наличие подходящих единиц размещения
-     */
     private boolean checkAvailableUnits(AccSearchRequestCreateRequest request,
                                        List<District> districts,
                                        List<Dictionary> services,
                                        List<Dictionary> conditions) {
 
-        // Собираем ID районов
         Set<Long> districtIds = new HashSet<>();
         for (District district : districts) {
             districtIds.add(district.getId());
         }
 
-        // Ищем подходящие единицы размещения
         List<AccommodationUnit> units = accommodationUnitRepository.findAll();
 
         for (AccommodationUnit unit : units) {
@@ -194,17 +175,14 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 continue;
             }
 
-            // Проверка типа недвижимости
             if (!request.getUnitTypes().contains(unit.getUnitType())) {
                 continue;
             }
 
-            // Проверка района
             if (!districtIds.contains(acc.getDistrict().getId())) {
                 continue;
             }
 
-            // Проверка рейтинга
             if (request.getFromRating() != null && acc.getRating() < request.getFromRating()) {
                 continue;
             }
@@ -212,12 +190,10 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 continue;
             }
 
-            // Проверка вместимости
             if (unit.getCapacity() < request.getCountOfPeople()) {
                 continue;
             }
 
-            // Проверка услуг
             boolean hasAllServices = true;
             if (!services.isEmpty()) {
                 Set<Long> unitServiceIds = new HashSet<>();
@@ -237,7 +213,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 continue;
             }
 
-            // Проверка условий
             boolean hasAllConditions = true;
             if (!conditions.isEmpty()) {
                 Set<Long> unitConditionIds = new HashSet<>();
@@ -257,7 +232,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 continue;
             }
 
-            // Если прошли все проверки - есть подходящий вариант
             return true;
         }
 
@@ -277,7 +251,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<AccSearchRequestResponse> getMySearchRequests(Long authorId, Pageable pageable) {
+    public Page<AccSearchRequestResponse> getMySearchRequests(String authorId, Pageable pageable) {
         log.info("Fetching search requests for user: {}", authorId);
         Page<AccSearchRequest> requests = accSearchRequestRepository.findAll(pageable);
         return requests.map(searchRequestMapper::toDto);
@@ -285,7 +259,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
     @Override
     @Transactional
-    public AccSearchRequestResponse updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, Long authorId) {
+    public AccSearchRequestResponse updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, String authorId) {
         log.info("Updating price for search request ID: {} by user: {}", id, authorId);
 
         AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
@@ -293,14 +267,12 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         "SEARCH_REQUEST_NOT_FOUND",
                         "Search request not found with ID: " + id));
 
-        // Проверяем что пользователь является автором заявки
-        if (!searchRequest.getAuthor().getId().equals(authorId)) {
+        if (!searchRequest.getAuthor().getKeycloakId().equals(authorId)) {
             throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
                     "ACCESS_DENIED",
                     "You can only update your own search requests");
         }
 
-        // Проверяем что заявка не отменена и не завершена
         if (searchRequest.getStatus() == SearchRequestStatus.CANCELLED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "SEARCH_REQUEST_CANCELLED",
@@ -313,7 +285,6 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                     "Cannot update price of a finished search request");
         }
 
-        // Обновляем только цену
         searchRequest.setPrice(request.getPrice());
         AccSearchRequest updated = accSearchRequestRepository.save(searchRequest);
 
@@ -323,7 +294,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
     @Override
     @Transactional
-    public AccSearchRequestResponse cancelSearchRequest(Long id, Long authorId) {
+    public AccSearchRequestResponse cancelSearchRequest(Long id, String authorId) {
         log.info("Cancelling search request ID: {} by user: {}", id, authorId);
 
         AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
@@ -331,28 +302,24 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         "SEARCH_REQUEST_NOT_FOUND",
                         "Search request not found with ID: " + id));
 
-        // Проверяем что пользователь является автором заявки
-        if (!searchRequest.getAuthor().getId().equals(authorId)) {
+        if (!searchRequest.getAuthor().getKeycloakId().equals(authorId)) {
             throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
                     "ACCESS_DENIED",
                     "You can only cancel your own search requests");
         }
 
-        // Проверяем что заявка еще не отменена
         if (searchRequest.getStatus() == SearchRequestStatus.CANCELLED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "SEARCH_REQUEST_ALREADY_CANCELLED",
                     "Search request is already cancelled");
         }
 
-        // Проверяем что заявка еще не завершена
         if (searchRequest.getStatus() == SearchRequestStatus.FINISHED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "SEARCH_REQUEST_ALREADY_FINISHED",
                     "Cannot cancel a finished search request");
         }
 
-        // Отменяем заявку
         searchRequest.setStatus(SearchRequestStatus.CANCELLED);
         AccSearchRequest cancelled = accSearchRequestRepository.save(searchRequest);
 

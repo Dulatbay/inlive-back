@@ -40,25 +40,22 @@ public class PriceRequestServiceImpl implements PriceRequestService {
 
     @Override
     @Transactional
-    public PriceRequestResponse createPriceRequest(PriceRequestCreateRequest request) {
+    public void createPriceRequest(PriceRequestCreateRequest request) {
         log.info("Creating price request for search request: {} and unit: {}",
                 request.getSearchRequestId(), request.getAccommodationUnitId());
 
-        // Проверяем что search request существует и активен
         AccSearchRequest searchRequest = accSearchRequestRepository
                 .findByIdAndIsDeletedFalse(request.getSearchRequestId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
                         "Search request not found with ID: " + request.getSearchRequestId()));
 
-        // Проверяем что unit существует
         AccommodationUnit unit = accommodationUnitRepository
                 .findByIdAndIsDeletedFalse(request.getAccommodationUnitId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_UNIT_NOT_FOUND",
                         "Accommodation Unit not found with ID: " + request.getAccommodationUnitId()));
 
-        // Проверяем что для этой пары searchRequest + unit еще нет активной заявки
         if (priceRequestRepository.existsBySearchRequestIdAndUnitId(
                 request.getSearchRequestId(), request.getAccommodationUnitId())) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
@@ -66,26 +63,22 @@ public class PriceRequestServiceImpl implements PriceRequestService {
                     "Price request already exists for this search request and unit");
         }
 
-        // Создаем заявку на цену
         PriceRequest priceRequest = priceRequestMapper.toEntity(request);
         priceRequest.setSearchRequest(searchRequest);
         priceRequest.setUnit(unit);
-        priceRequest.setStatus(PriceRequestStatus.ACCEPTED); // По умолчанию принимаем исходную цену
-        priceRequest.setClientResponseStatus(ClientResponseStatus.WAITING); // Клиент еще не ответил
+        priceRequest.setStatus(PriceRequestStatus.ACCEPTED);
+        priceRequest.setClientResponseStatus(ClientResponseStatus.WAITING);
 
-        // Обновляем статус search request на PRICE_REQUEST_PENDING
         searchRequest.setStatus(SearchRequestStatus.PRICE_REQUEST_PENDING);
         accSearchRequestRepository.save(searchRequest);
 
-        PriceRequest saved = priceRequestRepository.save(priceRequest);
-        log.info("Successfully created price request with ID: {}", saved.getId());
-
-        return priceRequestMapper.toDto(saved);
+        priceRequestRepository.save(priceRequest);
+        log.info("Successfully created price request with ID: {}", priceRequest.getId());
     }
 
     @Override
     @Transactional
-    public PriceRequestResponse updatePriceRequest(Long priceRequestId, PriceRequestUpdateRequest request) {
+    public void updatePriceRequest(Long priceRequestId, PriceRequestUpdateRequest request) {
         log.info("Updating price request: {} with status: {} and price: {}",
                 priceRequestId, request.getStatus(), request.getPrice());
 
@@ -94,17 +87,13 @@ public class PriceRequestServiceImpl implements PriceRequestService {
                         "PRICE_REQUEST_NOT_FOUND",
                         "Price request not found with ID: " + priceRequestId));
 
-        // Обновляем статус и цену
         priceRequest.setStatus(request.getStatus());
         priceRequest.setPrice(request.getPrice());
 
-        // Если статус изменился, сбрасываем ответ клиента на WAITING
         priceRequest.setClientResponseStatus(ClientResponseStatus.WAITING);
 
-        PriceRequest updated = priceRequestRepository.save(priceRequest);
+        priceRequestRepository.save(priceRequest);
         log.info("Successfully updated price request with ID: {}", priceRequestId);
-
-        return priceRequestMapper.toDto(updated);
     }
 
     @Override
@@ -117,7 +106,6 @@ public class PriceRequestServiceImpl implements PriceRequestService {
                         "PRICE_REQUEST_NOT_FOUND",
                         "Price request not found with ID: " + priceRequestId));
 
-        // Мягкое удаление (скрытие)
         priceRequest.softDelete();
         priceRequestRepository.save(priceRequest);
 
@@ -142,7 +130,6 @@ public class PriceRequestServiceImpl implements PriceRequestService {
     public Page<PriceRequestResponse> getPriceRequestsByUnitId(Long unitId, Pageable pageable) {
         log.info("Fetching price requests for unit: {}", unitId);
 
-        // Проверяем что unit существует
         accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_UNIT_NOT_FOUND",
@@ -157,7 +144,6 @@ public class PriceRequestServiceImpl implements PriceRequestService {
     public Page<PriceRequestResponse> getPriceRequestsBySearchRequestId(Long searchRequestId, Pageable pageable) {
         log.info("Fetching price requests for search request: {}", searchRequestId);
 
-        // Проверяем что search request существует
         accSearchRequestRepository.findByIdAndIsDeletedFalse(searchRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
@@ -170,57 +156,49 @@ public class PriceRequestServiceImpl implements PriceRequestService {
 
     @Override
     @Transactional
-    public PriceRequestResponse respondToPriceRequest(Long priceRequestId, PriceRequestClientResponseRequest request, Long clientId) {
+    public void respondToPriceRequest(Long priceRequestId, PriceRequestClientResponseRequest request, String clientId) {
         log.info("Client {} responding to price request {} with status: {}",
                 clientId, priceRequestId, request.getClientResponseStatus());
 
-        // Находим заявку на цену
         PriceRequest priceRequest = priceRequestRepository.findByIdAndIsDeletedFalse(priceRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "PRICE_REQUEST_NOT_FOUND",
                         "Price request not found with ID: " + priceRequestId));
 
-        // Проверяем что клиент является автором search request
         AccSearchRequest searchRequest = priceRequest.getSearchRequest();
-        if (!searchRequest.getAuthor().getId().equals(clientId)) {
+        if (!searchRequest.getAuthor().getKeycloakId().equals(clientId)) {
             throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
                     "ACCESS_DENIED",
                     "You can only respond to price requests for your own search requests");
         }
 
-        // Проверяем что клиент еще не отвечал на эту заявку
         if (priceRequest.getClientResponseStatus() != ClientResponseStatus.WAITING) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "ALREADY_RESPONDED",
                     "You have already responded to this price request with status: " +
-                    priceRequest.getClientResponseStatus());
+                            priceRequest.getClientResponseStatus());
         }
 
-        // Валидация: можно принять только ACCEPTED или REJECTED
         if (request.getClientResponseStatus() != ClientResponseStatus.ACCEPTED &&
-            request.getClientResponseStatus() != ClientResponseStatus.REJECTED) {
+                request.getClientResponseStatus() != ClientResponseStatus.REJECTED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_RESPONSE_STATUS",
                     "Client response status must be either ACCEPTED or REJECTED");
         }
 
-        // Обновляем статус ответа клиента
         priceRequest.setClientResponseStatus(request.getClientResponseStatus());
 
-        // Если клиент принял предложение, создаем бронь автоматически
         if (request.getClientResponseStatus() == ClientResponseStatus.ACCEPTED) {
-            // Проверяем что для этой price request еще нет бронирования
             if (reservationRepository.existsByPriceRequestId(priceRequestId)) {
                 log.warn("Reservation already exists for price request {}", priceRequestId);
             } else {
-                // Автоматически создаем бронирование со статусом WAITING_TO_APPROVE
                 Reservation reservation = new Reservation();
                 reservation.setPriceRequest(priceRequest);
                 reservation.setUnit(priceRequest.getUnit());
                 reservation.setSearchRequest(searchRequest);
-                reservation.setApprovedBy(searchRequest.getAuthor()); // Клиент, создавший заявку
-                reservation.setStatus(ReservationStatus.WAITING_TO_APPROVE); // Ожидает подтверждения от объекта
-                reservation.setNeedToPay(false); // На стадии MVP предоплата не требуется
+                reservation.setApprovedBy(searchRequest.getAuthor());
+                reservation.setStatus(ReservationStatus.WAITING_TO_APPROVE);
+                reservation.setNeedToPay(false);
 
                 reservationRepository.save(reservation);
                 log.info("Automatically created reservation with status WAITING_TO_APPROVE for price request {}", priceRequestId);
@@ -231,9 +209,7 @@ public class PriceRequestServiceImpl implements PriceRequestService {
             log.info("Search request {} status updated to WAIT_TO_RESERVATION", searchRequest.getId());
         }
 
-        PriceRequest updated = priceRequestRepository.save(priceRequest);
+        priceRequestRepository.save(priceRequest);
         log.info("Successfully processed client response for price request {}", priceRequestId);
-
-        return priceRequestMapper.toDto(updated);
     }
 }

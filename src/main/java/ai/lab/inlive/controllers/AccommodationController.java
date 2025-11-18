@@ -54,8 +54,7 @@ public class AccommodationController {
     public ResponseEntity<AccommodationResponse> getAccommodationById(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id) {
-        AccommodationResponse response = accommodationService.getAccommodationById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(accommodationService.getAccommodationById(id));
     }
 
     @Operation(summary = "Получить все размещения, соответствующие фильтрам", description = "Получение списка размещений с возможностью фильтрации")

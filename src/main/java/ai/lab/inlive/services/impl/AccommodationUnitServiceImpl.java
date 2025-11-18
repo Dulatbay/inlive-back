@@ -6,7 +6,6 @@ import ai.lab.inlive.dto.request.AccUnitTariffCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUnitCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUnitUpdateRequest;
 import ai.lab.inlive.dto.response.AccSearchRequestResponse;
-import ai.lab.inlive.dto.response.AccUnitTariffResponse;
 import ai.lab.inlive.dto.response.AccommodationUnitResponse;
 import ai.lab.inlive.dto.response.PriceRequestResponse;
 import ai.lab.inlive.dto.response.ReservationResponse;
@@ -115,7 +114,7 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
     @Override
     @Transactional
-    public AccUnitTariffResponse addTariff(Long unitId, AccUnitTariffCreateRequest request) {
+    public void addTariff(Long unitId, AccUnitTariffCreateRequest request) {
         log.info("Adding tariff for unit: {}", unitId);
         AccommodationUnit unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", "Accommodation Unit not found with ID: " + unitId));
@@ -132,11 +131,8 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
         tariff.setUnit(unit);
         tariff.setRangeType(rangeType);
 
-        AccUnitTariffs saved = accUnitTariffsRepository.save(tariff);
-
-        AccUnitTariffResponse response = unitMapper.toDto(saved);
-        log.info("Created tariff {} for unit {}", saved.getId(), unitId);
-        return response;
+        accUnitTariffsRepository.save(tariff);
+        log.info("Created tariff {} for unit {}", tariff.getId(), unitId);
     }
 
     @Override
@@ -368,12 +364,10 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
     public Page<PriceRequestResponse> getUnitPriceRequests(Long unitId, Pageable pageable) {
         log.info("Fetching price requests for unit: {}", unitId);
 
-        // Проверяем что unit существует
         accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND",
                         "Accommodation Unit not found with ID: " + unitId));
 
-        // Получаем заявки на цену
         Page<PriceRequest> priceRequests = priceRequestRepository.findActiveByUnitId(unitId, pageable);
 
         log.info("Found {} price requests for unit {}", priceRequests.getTotalElements(), unitId);
@@ -385,12 +379,10 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
     public Page<ReservationResponse> getUnitPendingReservations(Long unitId, Pageable pageable) {
         log.info("Fetching pending reservations for unit: {}", unitId);
 
-        // Проверяем что unit существует
         accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND",
                         "Accommodation Unit not found with ID: " + unitId));
 
-        // Получаем ожидающие бронирования
         Page<Reservation> reservations = reservationRepository.findPendingByUnitId(unitId, pageable);
 
         log.info("Found {} pending reservations for unit {}", reservations.getTotalElements(), unitId);

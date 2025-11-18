@@ -24,11 +24,11 @@ public class AccSearchRequestResponse {
     @Schema(description = "Максимальный рейтинг", example = "5.0")
     private Double toRating;
 
-    @Schema(description = "Дата начала", example = "2024-12-01T14:00:00")
-    private LocalDateTime fromDate;
+    @Schema(description = "Дата заезда (check-in)", example = "2024-12-01T14:00:00")
+    private LocalDateTime checkInDate;
 
-    @Schema(description = "Дата окончания", example = "2024-12-05T12:00:00")
-    private LocalDateTime toDate;
+    @Schema(description = "Дата выезда (check-out)", example = "2024-12-05T12:00:00")
+    private LocalDateTime checkOutDate;
 
     @Schema(description = "На одну ночь", example = "false")
     private Boolean oneNight;

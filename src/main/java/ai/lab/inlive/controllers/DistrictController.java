@@ -24,8 +24,7 @@ public class DistrictController {
     @GetMapping
     public ResponseEntity<List<DistrictResponse>> getAllDistricts() {
         log.info("Fetching all districts");
-        List<DistrictResponse> response = districtService.getAllDistricts();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(districtService.getAllDistricts());
     }
 
     @Operation(summary = "Получить районы по городу", description = "Получение всех районов определенного города")
@@ -34,7 +33,6 @@ public class DistrictController {
             @Parameter(description = "ID города")
             @PathVariable Long cityId) {
         log.info("Fetching districts for city ID: {}", cityId);
-        List<DistrictResponse> response = districtService.getDistrictsByCity(cityId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(districtService.getDistrictsByCity(cityId));
     }
 }

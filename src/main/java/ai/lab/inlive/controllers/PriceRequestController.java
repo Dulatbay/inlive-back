@@ -1,5 +1,6 @@
 package ai.lab.inlive.controllers;
 
+import ai.lab.inlive.constants.Utils;
 import ai.lab.inlive.dto.base.PaginatedResponse;
 import ai.lab.inlive.dto.request.PriceRequestCreateRequest;
 import ai.lab.inlive.dto.request.PriceRequestUpdateRequest;
@@ -21,6 +22,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -33,29 +36,29 @@ public class PriceRequestController {
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать заявку на цену",
-               description = "Создание новой заявки на цену для конкретной единицы размещения и заявки на поиск жилья")
+            description = "Создание новой заявки на цену для конкретной единицы размещения и заявки на поиск жилья")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PriceRequestResponse> createPriceRequest(
+    public ResponseEntity<Void> createPriceRequest(
             @RequestBody @Valid PriceRequestCreateRequest request) {
-        PriceRequestResponse response = priceRequestService.createPriceRequest(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        priceRequestService.createPriceRequest(request);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Обновить заявку на цену (для SUPER_MANAGER)",
-               description = "SUPER_MANAGER может: повысить цену (RAISED), принять текущую цену (ACCEPTED), понизить цену (DECREASED)")
+            description = "SUPER_MANAGER может: повысить цену (RAISED), принять текущую цену (ACCEPTED), понизить цену (DECREASED)")
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PriceRequestResponse> updatePriceRequest(
+    public ResponseEntity<Void> updatePriceRequest(
             @Parameter(description = "ID заявки на цену", example = "1")
             @PathVariable Long id,
             @RequestBody @Valid PriceRequestUpdateRequest request) {
-        PriceRequestResponse response = priceRequestService.updatePriceRequest(id, request);
-        return ResponseEntity.ok(response);
+        priceRequestService.updatePriceRequest(id, request);
+        return ResponseEntity.ok().build();
     }
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Скрыть заявку на цену",
-               description = "SUPER_MANAGER может скрыть заявку с экрана (мягкое удаление)")
+            description = "SUPER_MANAGER может скрыть заявку с экрана (мягкое удаление)")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> hidePriceRequest(
             @Parameter(description = "ID заявки на цену", example = "1")
@@ -65,17 +68,16 @@ public class PriceRequestController {
     }
 
     @Operation(summary = "Получить заявку на цену по ID",
-               description = "Получение детальной информации о заявке на цену")
+            description = "Получение детальной информации о заявке на цену")
     @GetMapping("/{id}")
     public ResponseEntity<PriceRequestResponse> getPriceRequestById(
             @Parameter(description = "ID заявки на цену", example = "1")
             @PathVariable Long id) {
-        PriceRequestResponse response = priceRequestService.getPriceRequestById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(priceRequestService.getPriceRequestById(id));
     }
 
     @Operation(summary = "Получить заявки на цену для единицы размещения",
-               description = "Получение всех активных заявок на цену для конкретной квартиры/номера")
+            description = "Получение всех активных заявок на цену для конкретной квартиры/номера")
     @GetMapping("/by-unit/{unitId}")
     public ResponseEntity<PaginatedResponse<PriceRequestResponse>> getPriceRequestsByUnitId(
             @Parameter(description = "ID единицы размещения", example = "1")
@@ -90,11 +92,12 @@ public class PriceRequestController {
                 Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
         );
         Page<PriceRequestResponse> response = priceRequestService.getPriceRequestsByUnitId(unitId, pageable);
+
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 
     @Operation(summary = "Получить заявки на цену для заявки на поиск жилья",
-               description = "Получение всех активных заявок на цену, связанных с конкретной заявкой на поиск жилья")
+            description = "Получение всех активных заявок на цену, связанных с конкретной заявкой на поиск жилья")
     @GetMapping("/by-search-request/{searchRequestId}")
     public ResponseEntity<PaginatedResponse<PriceRequestResponse>> getPriceRequestsBySearchRequestId(
             @Parameter(description = "ID заявки на поиск жилья", example = "1")
@@ -109,22 +112,24 @@ public class PriceRequestController {
                 Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
         );
         Page<PriceRequestResponse> response = priceRequestService.getPriceRequestsBySearchRequestId(searchRequestId, pageable);
+
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 
     @AccessForAdminsAndClients
     @Operation(summary = "Ответить на заявку цены (для CLIENT)",
-               description = "После получения предложения от объекта (с ценой ACCEPTED/RAISED/DECREASED), " +
-                             "клиент может принять предложение (ACCEPTED) или отказать (REJECTED). " +
-                             "При принятии заявка переходит в статус ожидания резервации.")
+            description = "После получения предложения от объекта (с ценой ACCEPTED/RAISED/DECREASED), " +
+                    "клиент может принять предложение (ACCEPTED) или отказать (REJECTED). " +
+                    "При принятии заявка переходит в статус ожидания резервации.")
     @PatchMapping(value = "/{id}/respond", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<PriceRequestResponse> respondToPriceRequest(
+    public ResponseEntity<Void> respondToPriceRequest(
             @Parameter(description = "ID заявки на цену", example = "1")
             @PathVariable Long id,
-            @RequestBody @Valid PriceRequestClientResponseRequest request,
-            org.springframework.security.core.Authentication authentication) {
-        Long clientId = Long.parseLong(authentication.getName());
-        PriceRequestResponse response = priceRequestService.respondToPriceRequest(id, request, clientId);
-        return ResponseEntity.ok(response);
+            @RequestBody @Valid PriceRequestClientResponseRequest request) {
+        var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        var clientId = Utils.extractIdFromToken(token);
+
+        priceRequestService.respondToPriceRequest(id, request, clientId);
+        return ResponseEntity.noContent().build();
     }
 }

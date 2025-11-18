@@ -6,7 +6,6 @@ import ai.lab.inlive.dto.request.AccUnitTariffCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUnitCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationUnitUpdateRequest;
 import ai.lab.inlive.dto.response.AccSearchRequestResponse;
-import ai.lab.inlive.dto.response.AccUnitTariffResponse;
 import ai.lab.inlive.dto.response.AccommodationUnitResponse;
 import ai.lab.inlive.dto.response.PriceRequestResponse;
 import ai.lab.inlive.dto.response.ReservationResponse;
@@ -19,7 +18,7 @@ import java.util.List;
 public interface AccommodationUnitService {
     void createUnit(AccommodationUnitCreateRequest request);
 
-    AccUnitTariffResponse addTariff(Long unitId, AccUnitTariffCreateRequest request);
+    void addTariff(Long unitId, AccUnitTariffCreateRequest request);
 
     AccommodationUnitResponse getUnitById(Long id);
 

@@ -45,8 +45,7 @@ public class DictionaryController {
     public ResponseEntity<DictionaryResponse> getDictionaryById(
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id) {
-        DictionaryResponse response = dictionaryService.getDictionaryById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(dictionaryService.getDictionaryById(id));
     }
 
     @Operation(summary = "Получить все элементы справочника, соответствующие фильтрам", description = "Получение списка всех элементов справочника с возможностью фильтрации по параметрам")

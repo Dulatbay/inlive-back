@@ -7,31 +7,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AccSearchRequestService {
-    /**
-     * Создать заявку на поиск жилья (для CLIENT)
-     * Проверяет наличие подходящих вариантов перед созданием
-     */
-    AccSearchRequestResponse createSearchRequest(AccSearchRequestCreateRequest request, Long authorId);
+    AccSearchRequestResponse createSearchRequest(AccSearchRequestCreateRequest request, String authorId);
 
-    /**
-     * Получить заявку по ID
-     */
     AccSearchRequestResponse getSearchRequestById(Long id);
 
-    /**
-     * Получить все заявки пользователя
-     */
-    Page<AccSearchRequestResponse> getMySearchRequests(Long authorId, Pageable pageable);
+    Page<AccSearchRequestResponse> getMySearchRequests(String authorId, Pageable pageable);
 
-    /**
-     * Обновить только цену в заявке на поиск жилья
-     * После создания заявки можно изменить только цену
-     */
-    AccSearchRequestResponse updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, Long authorId);
+    AccSearchRequestResponse updateSearchRequestPrice(Long id, AccSearchRequestUpdatePriceRequest request, String authorId);
 
-    /**
-     * Отменить заявку на поиск жилья
-     * Если заявка не действительна, её нужно отменить
-     */
-    AccSearchRequestResponse cancelSearchRequest(Long id, Long authorId);
+    AccSearchRequestResponse cancelSearchRequest(Long id, String authorId);
 }
