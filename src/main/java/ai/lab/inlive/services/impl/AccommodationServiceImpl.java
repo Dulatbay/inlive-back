@@ -4,11 +4,13 @@ import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationDictionariesUpdateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
+import ai.lab.inlive.dto.response.AccSearchRequestResponse;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import ai.lab.inlive.entities.*;
 import ai.lab.inlive.entities.enums.DictionaryKey;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.mappers.AccommodationMapper;
+import ai.lab.inlive.mappers.AccSearchRequestMapper;
 import ai.lab.inlive.mappers.ImageMapper;
 import ai.lab.inlive.repositories.*;
 import ai.lab.inlive.services.AccommodationService;
@@ -43,6 +45,8 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final FileManagerApi fileManagerApi;
     private final DictionaryRepository dictionaryRepository;
     private final AccDictionaryRepository accDictionaryRepository;
+    private final AccSearchRequestRepository accSearchRequestRepository;
+    private final AccSearchRequestMapper searchRequestMapper;
 
     @Override
     @Transactional
@@ -111,8 +115,10 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Transactional(readOnly = true)
     public AccommodationResponse getAccommodationById(Long id) {
         log.info("Fetching accommodation by ID: {}", id);
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+
         return mapper.toDto(accommodation, imageMapper);
     }
 
@@ -170,7 +176,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     @Transactional
     public void updateDictionaries(Long accommodationId, AccommodationDictionariesUpdateRequest request) {
         log.info("Updating dictionaries for accommodation: {}", accommodationId);
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND",
                         "Accommodation not found with ID: " + accommodationId));
 
@@ -320,7 +326,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void deleteAccommodation(Long id) {
         log.info("Deleting accommodation with ID: {}", id);
 
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
         accommodation.softDelete();
@@ -335,10 +341,10 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void approveAccommodation(Long id, String approvedBy) {
         log.info("Approving accommodation with ID: {} by: {}", id, approvedBy);
 
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
-        User approver = userRepository.findByKeycloakId(approvedBy)
+        var approver = userRepository.findByKeycloakId(approvedBy)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + approvedBy));
 
         accommodation.setApproved(true);
@@ -353,10 +359,10 @@ public class AccommodationServiceImpl implements AccommodationService {
     public void rejectAccommodation(Long id, String rejectedBy) {
         log.info("Rejecting accommodation with ID: {}", id);
 
-        Accommodation accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
+        var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
 
-        User rejecter = userRepository.findByKeycloakId(rejectedBy)
+        var rejecter = userRepository.findByKeycloakId(rejectedBy)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + rejectedBy));
 
         accommodation.setApproved(false);
@@ -371,11 +377,26 @@ public class AccommodationServiceImpl implements AccommodationService {
     public Page<AccommodationResponse> getAccommodationsByOwner(String ownerId, AccommodationSearchParams accommodationSearchParams, Pageable pageable) {
         log.info("Fetching accommodations for owner: {} with pagination", ownerId);
 
-        User owner = userRepository.findByKeycloakId(ownerId)
+        var owner = userRepository.findByKeycloakId(ownerId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + ownerId));
 
         var accommodations = accommodationRepository.findByOwnerIdWithFilters(owner.getId(), accommodationSearchParams, pageable);
 
         return accommodations.map(acc -> mapper.toDto(acc, imageMapper));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AccSearchRequestResponse> getRelevantRequests(Long accommodationId, Pageable pageable) {
+        log.info("Fetching relevant search requests for accommodation: {}", accommodationId);
+
+        accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND",
+                        "Accommodation not found with ID: " + accommodationId));
+
+        Page<AccSearchRequest> requests = accSearchRequestRepository.findRelevantRequestsForAccommodation(accommodationId, pageable);
+
+        log.info("Found {} relevant requests for accommodation {}", requests.getTotalElements(), accommodationId);
+        return requests.map(searchRequestMapper::toDto);
     }
 }

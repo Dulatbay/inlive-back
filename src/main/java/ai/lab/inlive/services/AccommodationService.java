@@ -4,6 +4,7 @@ import ai.lab.inlive.dto.params.AccommodationSearchParams;
 import ai.lab.inlive.dto.request.AccommodationCreateRequest;
 import ai.lab.inlive.dto.request.AccommodationDictionariesUpdateRequest;
 import ai.lab.inlive.dto.request.AccommodationUpdateRequest;
+import ai.lab.inlive.dto.response.AccSearchRequestResponse;
 import ai.lab.inlive.dto.response.AccommodationResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -39,4 +40,6 @@ public interface AccommodationService {
     void rejectAccommodation(Long id, String rejectedBy);
 
     Page<AccommodationResponse> getAccommodationsByOwner(String ownerId, AccommodationSearchParams accommodationSearchParams, Pageable pageable);
+
+    Page<AccSearchRequestResponse> getRelevantRequests(Long accommodationId, Pageable pageable);
 }

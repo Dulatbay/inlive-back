@@ -379,21 +379,18 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             var token = kc.tokenManager().getAccessToken();
 
-            // Сохраняем refresh token в cookie
             if (token.getRefreshToken() != null) {
                 Cookie refreshTokenCookie = buildRefreshTokenCookie(token.getRefreshToken(),
                         (int) token.getRefreshExpiresIn());
                 response.addCookie(refreshTokenCookie);
             }
 
-            // Сохраняем роль пользователя в cookie
             String role = extractRoleFromToken(token.getToken());
             if (role != null) {
                 Cookie roleCookie = buildRoleCookie(role);
                 response.addCookie(roleCookie);
             }
 
-            // Возвращаем только access token, refresh token в cookie
             return AuthResponse.builder()
                     .accessToken(token.getToken())
                     .expiresIn(token.getExpiresIn())
@@ -404,7 +401,6 @@ public class KeycloakServiceImpl implements KeycloakService {
 
     @Override
     public AuthResponse refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        // Извлекаем refresh token из cookie
         Cookie refreshTokenCookie = extractRefreshTokenCookie(request);
         String refreshToken = refreshTokenCookie.getValue();
 
@@ -428,21 +424,18 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             KeycloakTokenResponse body = resp.getBody();
             if (resp.getStatusCode().is2xxSuccessful() && body != null) {
-                // Сохраняем новый refresh token в cookie
                 if (body.refreshToken() != null) {
                     Integer refreshExpiresIn = body.refreshExpiresIn() != null ? body.refreshExpiresIn().intValue() : null;
                     Cookie newRefreshTokenCookie = buildRefreshTokenCookie(body.refreshToken(), refreshExpiresIn);
                     response.addCookie(newRefreshTokenCookie);
                 }
 
-                // Сохраняем роль пользователя в cookie
                 String role = extractRoleFromToken(body.accessToken());
                 if (role != null) {
                     Cookie roleCookie = buildRoleCookie(role);
                     response.addCookie(roleCookie);
                 }
 
-                // Возвращаем только access token, refresh token в cookie
                 return AuthResponse.builder()
                         .accessToken(body.accessToken())
                         .expiresIn(body.expiresIn())

@@ -11,6 +11,10 @@ import ai.lab.inlive.security.authorization.AccessForAdminsAndClients;
 import ai.lab.inlive.services.PriceRequestService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +41,14 @@ public class PriceRequestController {
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать заявку на цену",
             description = "Создание новой заявки на цену для конкретной единицы размещения и заявки на поиск жилья")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Заявка на цену успешно создана"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "404", description = "Единица размещения или заявка на поиск не найдена"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createPriceRequest(
             @RequestBody @Valid PriceRequestCreateRequest request) {
@@ -47,6 +59,14 @@ public class PriceRequestController {
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Обновить заявку на цену (для SUPER_MANAGER)",
             description = "SUPER_MANAGER может: повысить цену (RAISED), принять текущую цену (ACCEPTED), понизить цену (DECREASED)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Заявка на цену успешно обновлена"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или недопустимое действие"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "404", description = "Заявка на цену не найдена"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> updatePriceRequest(
             @Parameter(description = "ID заявки на цену", example = "1")
@@ -59,6 +79,13 @@ public class PriceRequestController {
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Скрыть заявку на цену",
             description = "SUPER_MANAGER может скрыть заявку с экрана (мягкое удаление)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Заявка на цену успешно скрыта"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "404", description = "Заявка на цену не найдена"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> hidePriceRequest(
             @Parameter(description = "ID заявки на цену", example = "1")
@@ -69,6 +96,12 @@ public class PriceRequestController {
 
     @Operation(summary = "Получить заявку на цену по ID",
             description = "Получение детальной информации о заявке на цену")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Заявка на цену успешно получена",
+                    content = @Content(schema = @Schema(implementation = PriceRequestResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Заявка на цену не найдена", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
     @GetMapping("/{id}")
     public ResponseEntity<PriceRequestResponse> getPriceRequestById(
             @Parameter(description = "ID заявки на цену", example = "1")
@@ -121,6 +154,14 @@ public class PriceRequestController {
             description = "После получения предложения от объекта (с ценой ACCEPTED/RAISED/DECREASED), " +
                     "клиент может принять предложение (ACCEPTED) или отказать (REJECTED). " +
                     "При принятии заявка переходит в статус ожидания резервации.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Ответ на заявку успешно сохранен"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или недопустимое действие"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен - можно отвечать только на свои заявки"),
+            @ApiResponse(responseCode = "404", description = "Заявка на цену не найдена"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PatchMapping(value = "/{id}/respond", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> respondToPriceRequest(
             @Parameter(description = "ID заявки на цену", example = "1")

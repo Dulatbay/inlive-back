@@ -11,6 +11,10 @@ import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
 import ai.lab.inlive.services.ReservationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +42,14 @@ public class ReservationController {
     @Operation(summary = "Создать бронирование",
             description = "Создание бронирования после подтверждения клиентом заявки на цену. " +
                     "Бронирование создается со статусом WAITING_TO_APPROVE и требует подтверждения SUPER_MANAGER")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Бронирование успешно создано"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "404", description = "Заявка на цену не найдена"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createReservation(
             @RequestBody @Valid ReservationCreateRequest request) {
@@ -49,6 +61,14 @@ public class ReservationController {
     @Operation(summary = "Обновить статус бронирования (для SUPER_MANAGER)",
             description = "SUPER_MANAGER может принять бронь (APPROVED) или отказать (REJECTED). " +
                     "На стадии MVP предоплата для брони не предусматривается.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Статус бронирования успешно обновлен"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или недопустимое действие"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "404", description = "Бронирование не найдено"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PutMapping(value = "/{id}/status", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> updateReservationStatus(
             @Parameter(description = "ID бронирования", example = "1")
@@ -63,6 +83,14 @@ public class ReservationController {
             description = "После подтверждения брони (статус APPROVED), отель/владелец квартиры ждет прихода клиента. " +
                     "SUPER_MANAGER вручную отмечает: FINISHED_SUCCESSFUL (клиент пришел и заселился) или " +
                     "CLIENT_DIDNT_CAME (клиент не пришел)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Финальный статус успешно обновлен"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или недопустимое действие"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен"),
+            @ApiResponse(responseCode = "404", description = "Бронирование не найдено"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PutMapping(value = "/{id}/final-status", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> updateFinalStatus(
             @Parameter(description = "ID бронирования", example = "1")
@@ -74,6 +102,12 @@ public class ReservationController {
 
     @Operation(summary = "Получить бронирование по ID",
             description = "Получение детальной информации о бронировании")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Бронирование успешно получено",
+                    content = @Content(schema = @Schema(implementation = ReservationResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Бронирование не найдено", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
     @GetMapping("/{id}")
     public ResponseEntity<ReservationResponse> getReservationById(
             @Parameter(description = "ID бронирования", example = "1")
@@ -172,6 +206,14 @@ public class ReservationController {
                     "При отмене статус брони меняется на CANCELED. " +
                     "ТОЛЬКО КЛИЕНТ может отменить свою бронь. " +
                     "Можно отменить брони в статусах WAITING_TO_APPROVE или APPROVED")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Бронирование успешно отменено"),
+            @ApiResponse(responseCode = "400", description = "Отмена невозможна - слишком поздно (менее 1 дня до заезда) или недопустимый статус"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен - можно отменять только свои бронирования"),
+            @ApiResponse(responseCode = "404", description = "Бронирование не найдено"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<Void> cancelReservation(
             @Parameter(description = "ID бронирования", example = "1")

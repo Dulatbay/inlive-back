@@ -268,7 +268,12 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
     @Transactional(readOnly = true)
     public Page<AccSearchRequestResponse> getMySearchRequests(String authorId, Pageable pageable) {
         log.info("Fetching search requests for user: {}", authorId);
-        Page<AccSearchRequest> requests = accSearchRequestRepository.findAll(pageable);
+
+        var author = userRepository.findByKeycloakId(authorId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + authorId));
+
+        Page<AccSearchRequest> requests = accSearchRequestRepository.findAllByAuthor_IdAndIsDeletedFalse(author.getId(), pageable);
+
         return requests.map(searchRequestMapper::toDto);
     }
 
@@ -335,6 +340,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
 
         searchRequest.setStatus(SearchRequestStatus.CANCELLED);
+        searchRequest.softDelete();
         accSearchRequestRepository.save(searchRequest);
 
         log.info("Successfully cancelled search request ID: {}", id);
