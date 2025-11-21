@@ -32,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR;
@@ -387,5 +388,86 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
         log.info("Found {} pending reservations for unit {}", reservations.getTotalElements(), unitId);
         return reservations.map(reservationMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccommodationUnitResponse> getUnitsByAccommodationAndRequest(Long accommodationId, Long requestId) {
+        log.info("Fetching relevant units for accommodation: {} and request: {}", accommodationId, requestId);
+
+        accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND",
+                        "Accommodation not found with ID: " + accommodationId));
+
+        AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(requestId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "SEARCH_REQUEST_NOT_FOUND",
+                        "Search request not found with ID: " + requestId));
+
+        List<AccommodationUnit> allUnits = accommodationUnitRepository.findByAccommodationIdAndIsDeletedFalse(accommodationId);
+
+        List<AccommodationUnit> relevantUnits = allUnits.stream()
+                .filter(unit -> isUnitRelevantForRequest(unit, searchRequest))
+                .toList();
+
+        log.info("Found {} relevant units out of {} total units for accommodation {} and request {}",
+                relevantUnits.size(), allUnits.size(), accommodationId, requestId);
+
+        return relevantUnits.stream()
+                .map(unit -> unitMapper.toDto(unit, imageMapper))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isUnitRelevantForRequest(AccommodationUnit unit, AccSearchRequest searchRequest) {
+        Accommodation accommodation = unit.getAccommodation();
+
+        // 1. Проверка типа недвижимости
+        boolean hasMatchingType = searchRequest.getUnitTypes().stream()
+                .anyMatch(requestType -> requestType.getUnitType() == unit.getUnitType());
+        if (!hasMatchingType) {
+            return false;
+        }
+
+        // 2. Проверка рейтинга accommodation
+        if (searchRequest.getFromRating() != null && accommodation.getRating() < searchRequest.getFromRating()) {
+            return false;
+        }
+        if (searchRequest.getToRating() != null && accommodation.getRating() > searchRequest.getToRating()) {
+            return false;
+        }
+
+        // 3. Проверка района
+        boolean hasMatchingDistrict = searchRequest.getDistricts().stream()
+                .anyMatch(requestDistrict -> requestDistrict.getDistrict().getId().equals(accommodation.getDistrict().getId()));
+        if (!hasMatchingDistrict) {
+            return false;
+        }
+
+        // 4. Проверка услуг (SERVICES) - все услуги из заявки должны быть у unit
+        Set<Long> unitServiceIds = unit.getDictionaries().stream()
+                .filter(d -> d.getDictionary().getKey() == DictionaryKey.ACC_SERVICE)
+                .map(d -> d.getDictionary().getId())
+                .collect(Collectors.toSet());
+
+        Set<Long> requestServiceIds = searchRequest.getDictionaries().stream()
+                .filter(d -> d.getDictionary().getKey() == DictionaryKey.ACC_SERVICE)
+                .map(d -> d.getDictionary().getId())
+                .collect(Collectors.toSet());
+
+        if (!unitServiceIds.containsAll(requestServiceIds)) {
+            return false;
+        }
+
+        // 5. Проверка условий (CONDITIONS) - все условия из заявки должны быть у unit
+        Set<Long> unitConditionIds = unit.getDictionaries().stream()
+                .filter(d -> d.getDictionary().getKey() == DictionaryKey.ACC_CONDITION)
+                .map(d -> d.getDictionary().getId())
+                .collect(Collectors.toSet());
+
+        Set<Long> requestConditionIds = searchRequest.getDictionaries().stream()
+                .filter(d -> d.getDictionary().getKey() == DictionaryKey.ACC_CONDITION)
+                .map(d -> d.getDictionary().getId())
+                .collect(Collectors.toSet());
+
+        return unitConditionIds.containsAll(requestConditionIds);
     }
 }

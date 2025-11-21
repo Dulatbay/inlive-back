@@ -225,6 +225,24 @@ public class AccommodationUnitController {
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 
+    @Operation(summary = "Получить релевантные единицы размещения для заявки",
+            description = "Получение списка единиц размещения (units) из конкретного размещения (accommodation), " +
+                    "которые соответствуют критериям конкретной заявки на поиск: тип недвижимости, рейтинг, район, услуги, условия")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список релевантных единиц размещения успешно получен"),
+            @ApiResponse(responseCode = "404", description = "Размещение или заявка не найдены", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
+    @GetMapping("/{accId}/by-request/{requestId}")
+    public ResponseEntity<List<AccommodationUnitResponse>> getUnitsByAccommodationAndRequest(
+            @Parameter(description = "ID размещения (accommodation)", example = "1")
+            @PathVariable Long accId,
+            @Parameter(description = "ID заявки на поиск жилья", example = "1")
+            @PathVariable Long requestId) {
+        List<AccommodationUnitResponse> response = accommodationUnitService.getUnitsByAccommodationAndRequest(accId, requestId);
+        return ResponseEntity.ok(response);
+    }
+
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Получить заявки на цену для единицы размещения",
             description = "Получение всех активных заявок на цену для данной квартиры/номера")

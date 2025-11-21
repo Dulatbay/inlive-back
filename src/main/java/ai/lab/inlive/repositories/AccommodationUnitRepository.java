@@ -9,11 +9,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface AccommodationUnitRepository extends JpaRepository<AccommodationUnit, Long> {
     Optional<AccommodationUnit> findByIdAndIsDeletedFalse(Long id);
+
+    List<AccommodationUnit> findByAccommodationIdAndIsDeletedFalse(Long accommodationId);
 
     @Query(value = """
             SELECT au.*

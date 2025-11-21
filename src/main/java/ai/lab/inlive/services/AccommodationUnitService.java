@@ -39,4 +39,6 @@ public interface AccommodationUnitService {
     Page<PriceRequestResponse> getUnitPriceRequests(Long unitId, Pageable pageable);
 
     Page<ReservationResponse> getUnitPendingReservations(Long unitId, Pageable pageable);
+
+    List<AccommodationUnitResponse> getUnitsByAccommodationAndRequest(Long accommodationId, Long requestId);
 }
