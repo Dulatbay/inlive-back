@@ -4,7 +4,7 @@ spring:
     keycloak-url: ${KEYCLOAK_URL:http://localhost:8182}
     realm: master
     client-id: inlive
-    client-secret: ${KEYCLOAK_CLIENT_SECRET:RBvTqKkuKZamivUjBfvVN4556GADm25V}
+    client-secret: ${KEYCLOAK_CLIENT_SECRET:GxMys665WU9UIBHGc0yToYXgqXTicnbi}
     username: ${KEYCLOAK_ADMIN:admin}
     password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
     send-email: false
@@ -23,6 +23,7 @@ spring:
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:postgres}
   jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: update
     generate-ddl: true
