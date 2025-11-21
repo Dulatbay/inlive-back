@@ -1,22 +1,90 @@
 version: "3.9"
 
 services:
+  inlive-back:
+    image: qqanly/inlive-back:latest
+    container_name: inlive-back
+    ports:
+      - "8888:8080"
+    environment:
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - KEYCLOAK_CLIENT_SECRET=${KEYCLOAK_CLIENT_SECRET}
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+
+      - POSTGRES_ADDRESS=${POSTGRES_ADDRESS}
+      - POSTGRES_ADDRESS_PORT=${POSTGRES_ADDRESS_PORT}
+      - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+
+    depends_on:
+      - postgres
+      - keycloak
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "20"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/api/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-platform
+
+  inlive-file-manager:
+    image: qqanly/inlive-file-manager:latest
+    container_name: inlive-file-manager
+    ports:
+      - "8889:8888"
+    environment:
+      - KEYCLOAK_URL=${KEYCLOAK_URL}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+
+    depends_on:
+      - postgres
+      - keycloak
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "20"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8889/api/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - app-platform
+
   postgres:
     container_name: inlive-postgres
-    image: postgres
-    expose:
-      - "5432"
+    image: postgres:18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: inlive
     ports:
       - "5434:5432"
+    volumes:
+      - pg18_inlive:/var/lib/postgresql   # 18+ expects this mount point
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d inlive"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
+    networks:
+      - app-platform
 
   postgres-keycloak:
     container_name: inlive-postgres-keycloak
-    image: postgres
+    image: postgres:18
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: postgres
@@ -24,41 +92,49 @@ services:
     ports:
       - "5435:5432"
     volumes:
-      - keycloak_postgres_data:/var/lib/postgresql/data
+      - pg18_keycloak:/var/lib/postgresql # 18+ expects this mount point
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
+    networks:
+      - app-platform
 
   keycloak:
     container_name: inlive-keycloak
     image: quay.io/keycloak/keycloak:26.4.0
     environment:
-      KEYCLOAK_ADMIN: admin
-      KEYCLOAK_ADMIN_PASSWORD: admin
-      KC_DB: postgres
-      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
-      KC_DB_USERNAME: postgres
-      KC_DB_PASSWORD: postgres
+      - KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
+      - KEYCLOAK_ADMIN_PASSWORD=${KEYCLOAK_ADMIN_PASSWORD}
+
+      - KC_DB=${KC_DB}
+      - KC_DB_URL_HOST=${KC_DB_URL_HOST}
+      - KC_DB_URL_PORT=${KC_DB_URL_PORT}
+      - KC_DB_URL_DATABASE=${KC_DB_URL_DATABASE}
+      - KC_DB_USERNAME=${KC_DB_USERNAME}
+      - KC_DB_PASSWORD=${KC_DB_PASSWORD}
+
+      - KC_HOSTNAME_STRICT=${KC_HOSTNAME_STRICT}
+      - KC_HOSTNAME_STRICT_HTTPS=${KC_HOSTNAME_STRICT_HTTPS}
+      - KC_PROXY=${KC_PROXY}
+
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    command: start-dev
     ports:
       - "8182:8080"
-    depends_on:
-      - postgres-keycloak
-    command: start-dev
     restart: unless-stopped
+    networks:
+      - app-platform
 
-#  springapp:
-#    container_name: wonder-springapp
-#    build:
-#      context: .
-#      dockerfile: Dockerfile
-#    environment:
-#      DATABASE_DOMAIN: postgres
-#      DATABASE_PORT: 5432
-#      DATABASE_NAME: wonder
-#      DATABASE_USERNAME: user_qit
-#      DATABASE_PASSWORD: 123
-#    ports:
-#      - "8181:8181"
-#    depends_on:
-#      - postgres
+
+networks:
+  app-platform:
+    driver: bridge
 
 volumes:
-  keycloak_postgres_data:
+  pg18_inlive:
+  pg18_keycloak:
