@@ -1,34 +1,31 @@
-# Stage 1: Build stage
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM gradle:8.5-jdk21 AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy Maven wrapper and project files
-COPY .mvn/ .mvn
-COPY mvnw pom.xml /app/
-RUN chmod +x mvnw
+COPY gradlew .
+COPY gradle gradle
+COPY build.gradle.kts .
+COPY settings.gradle.kts .
 
-# Download dependencies
-RUN ./mvnw dependency:go-offline
+RUN chmod +x ./gradlew
 
-# Copy the rest of the application source code
-COPY src /app/src
+COPY src src
 
-# Build the application
-RUN ./mvnw package -DskipTests
+RUN ./gradlew build -x test
 
-# Stage 2: Runtime stage
 FROM eclipse-temurin:21-jre-alpine
 
-# Set working directory
+RUN addgroup -g 1001 -S spring
+RUN adduser -S spring -u 1001
+
 WORKDIR /app
 
-# Copy the built application from the build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=builder /app/build/libs/*.jar app.jar
 
-# Expose application port (adjust as needed)
+RUN chown -R spring:spring /app
+
+USER spring
+
 EXPOSE 8080
 
-# Command to run the application
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"] 
