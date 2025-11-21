@@ -57,3 +57,24 @@ server:
     include-message: always
   port: ${PORT:8080}
   address: 0.0.0.0
+
+management:
+  endpoint:
+    metrics:
+      access: read_only
+    prometheus:
+      access: read_only
+    health:
+      show-details: always
+    beans:
+      access: read_only
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+
