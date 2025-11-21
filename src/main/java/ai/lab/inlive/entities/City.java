@@ -1,23 +1,23 @@
 package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "cities")
 public class City extends AbstractEntity<Long>{
     @Column(nullable = false)
     private String name;
 
     @OneToMany(mappedBy = "city", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<District> districts = new ArrayList<>();
+    private Set<District> districts = new HashSet<>();
 
     @OneToMany(mappedBy = "city", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Accommodation> accommodations = new ArrayList<>();
+    private Set<Accommodation> accommodations = new HashSet<>();
 }

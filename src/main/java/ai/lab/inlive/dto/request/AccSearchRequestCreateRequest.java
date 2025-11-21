@@ -1,0 +1,55 @@
+package ai.lab.inlive.dto.request;
+
+import ai.lab.inlive.entities.enums.UnitType;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@Schema(description = "Запрос на создание заявки на поиск жилья (для CLIENT)")
+public class AccSearchRequestCreateRequest {
+    @NotNull(message = "Check-in date is required")
+    @FutureOrPresent(message = "Check-in date must be today or in the future")
+    @Schema(description = "Дата заезда (check-in)", example = "2025-12-01")
+    private LocalDate checkInDate;
+
+    @Schema(description = "Дата выезда (check-out). Опциональна, если указан флаг oneNight", example = "2025-12-05")
+    private LocalDate checkOutDate;
+
+    @Schema(description = "Флаг 'на одну ночь'. Если true, checkOutDate = checkInDate + 1 день", example = "false")
+    private Boolean oneNight;
+
+    @NotNull(message = "Price is required")
+    @DecimalMin(value = "0.0", message = "Price must be non-negative")
+    @Schema(description = "Предложенная цена", example = "50000.0")
+    private Double price;
+
+    @NotNull(message = "Count of people is required")
+    @Min(value = 1, message = "Count of people must be at least 1")
+    @Schema(description = "Количество людей", example = "2")
+    private Integer countOfPeople;
+
+    @Schema(description = "Минимальный рейтинг", example = "4.0")
+    private Double fromRating;
+
+    @Schema(description = "Максимальный рейтинг", example = "5.0")
+    private Double toRating;
+
+    @NotEmpty(message = "At least one unit type is required")
+    @Schema(description = "Типы недвижимости (HOTEL_ROOM, APARTMENT)", example = "[\"HOTEL_ROOM\", \"APARTMENT\"]")
+    private List<UnitType> unitTypes;
+
+    @NotEmpty(message = "At least one district is required")
+    @Schema(description = "ID районов", example = "[1, 2, 3]")
+    private List<Long> districtIds;
+
+    @Schema(description = "ID необходимых услуг (ACC_SERVICE)", example = "[1, 2, 3]")
+    private List<Long> serviceDictionaryIds;
+
+    @Schema(description = "ID условий проживания (ACC_CONDITION)", example = "[4, 5, 6]")
+    private List<Long> conditionDictionaryIds;
+}
+

@@ -2,7 +2,6 @@ package ai.lab.inlive.entities;
 
 import ai.lab.inlive.config.converters.LocalDateTimeAttributeConverter;
 import jakarta.persistence.*;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 import java.io.Serializable;
@@ -10,8 +9,6 @@ import java.time.LocalDateTime;
 
 import static ai.lab.inlive.constants.ValueConstants.ZONE_ID;
 
-
-@EqualsAndHashCode
 @Getter
 @MappedSuperclass
 public abstract class AbstractEntity<T extends Serializable> {
@@ -45,5 +42,19 @@ public abstract class AbstractEntity<T extends Serializable> {
     public void softDelete() {
         this.isDeleted = true;
         this.updatedAt = LocalDateTime.now(ZONE_ID);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AbstractEntity<?> that = (AbstractEntity<?>) o;
+        if (this.id == null || that.id == null) return false;
+        return this.id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id != null ? id.hashCode() : getClass().hashCode();
     }
 }

@@ -2,12 +2,12 @@ package ai.lab.inlive.entities;
 
 import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-@EqualsAndHashCode(callSuper = false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "acc_search_request_unit_type")
 public class AccSearchRequestUnitType extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

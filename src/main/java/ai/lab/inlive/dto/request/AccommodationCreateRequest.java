@@ -4,6 +4,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @Data
 public class AccommodationCreateRequest {
@@ -24,6 +27,12 @@ public class AccommodationCreateRequest {
     @Size(max = 5000, message = "Description must not exceed 5000 characters")
     private String description;
 
-    @NotNull(message = "Owner ID is required")
-    private Long ownerId;
+    @NotNull(message = "Rating is required")
+    private Double rating;
+
+    private List<Long> serviceDictionaryIds;
+
+    private List<Long> conditionDictionaryIds;
+
+    private List<MultipartFile> images;
 }

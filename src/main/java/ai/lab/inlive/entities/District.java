@@ -1,15 +1,15 @@
 package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "districts")
 public class District extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -20,5 +20,5 @@ public class District extends AbstractEntity<Long> {
     private String name;
 
     @OneToMany(mappedBy = "district", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Accommodation> accommodations = new ArrayList<>();
+    private Set<Accommodation> accommodations = new HashSet<>();
 }

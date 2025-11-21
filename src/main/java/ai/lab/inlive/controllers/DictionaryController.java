@@ -9,6 +9,10 @@ import ai.lab.inlive.security.authorization.AccessForAdmins;
 import ai.lab.inlive.services.DictionaryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,25 +37,40 @@ public class DictionaryController {
 
     @AccessForAdmins
     @Operation(summary = "Создать элемент справочника", description = "Создание нового элемента справочника")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Элемент справочника успешно создан"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> createDictionary(
             @RequestBody @Valid DictionaryCreateRequest request) {
-        log.info("Creating dictionary: {}", request.getKey());
         dictionaryService.createDictionary(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @Operation(summary = "Получить элемент справочника по ID", description = "Получение элемента справочника по идентификатору")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Элемент справочника успешно получен",
+                    content = @Content(schema = @Schema(implementation = DictionaryResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Элемент справочника не найден", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
     @GetMapping("/{id}")
     public ResponseEntity<DictionaryResponse> getDictionaryById(
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id) {
-        log.info("Fetching dictionary by ID: {}", id);
-        DictionaryResponse response = dictionaryService.getDictionaryById(id);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(dictionaryService.getDictionaryById(id));
     }
 
     @Operation(summary = "Получить все элементы справочника, соответствующие фильтрам", description = "Получение списка всех элементов справочника с возможностью фильтрации по параметрам")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список элементов справочника успешно получен"),
+            @ApiResponse(responseCode = "400", description = "Некорректные параметры фильтрации", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
     @GetMapping("/search")
     public ResponseEntity<PaginatedResponse<DictionaryResponse>> searchDictionaries(
             @ModelAttribute DictionarySearchParams dictionarySearchParams,
@@ -59,9 +78,6 @@ public class DictionaryController {
             @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
             @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "id") String sortBy,
             @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "asc") String sortDirection) {
-        log.info("Searching dictionaries with filters: {}, page: {}, size: {}, sortBy: {}, sortDirection: {}",
-                dictionarySearchParams, page, size, sortBy, sortDirection);
-
         Pageable pageable = PageRequest.of(
                 page,
                 size,
@@ -72,22 +88,31 @@ public class DictionaryController {
     }
 
     @Operation(summary = "Обновить элемент справочника", description = "Обновление данных элемента справочника")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Элемент справочника успешно обновлен"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса"),
+            @ApiResponse(responseCode = "404", description = "Элемент справочника не найден"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<Void> updateDictionary(
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id,
             @RequestBody @Valid DictionaryUpdateRequest request) {
-        log.info("Updating dictionary with ID: {}", id);
         dictionaryService.updateDictionary(id, request);
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "Удалить элемент справочника", description = "Мягкое удаление элемента справочника")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Элемент справочника успешно удален"),
+            @ApiResponse(responseCode = "404", description = "Элемент справочника не найден"),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDictionary(
             @Parameter(description = "ID элемента справочника", example = "1")
             @PathVariable Long id) {
-        log.info("Deleting dictionary with ID: {}", id);
         dictionaryService.deleteDictionary(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,15 +1,15 @@
 package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "accommodations")
 public class Accommodation extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -32,10 +32,10 @@ public class Accommodation extends AbstractEntity<Long> {
     @Column(nullable = false)
     private Double rating;
 
-    @Column(name = "is_approved", nullable = false)
+    @Column(name = "is_approved")
     private Boolean approved;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) // optional = true,
     @JoinColumn(name = "approved_by")
     private User approvedBy;
 
@@ -43,18 +43,18 @@ public class Accommodation extends AbstractEntity<Long> {
     @JoinColumn(name = "owner_id")
     private User ownerId;
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccImages> images = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccImages> images = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccDocuments> documents = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccDocuments> documents = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccDictionary> dictionaries = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccDictionary> dictionaries = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccConfig> configs = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccConfig> configs = new HashSet<>();
 
-    @OneToMany(mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccommodationUnit> units = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccommodationUnit> units = new HashSet<>();
 }

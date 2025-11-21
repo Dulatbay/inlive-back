@@ -2,15 +2,16 @@ package ai.lab.inlive.entities;
 
 import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
-@EqualsAndHashCode(callSuper=false)
-@Data
+@Getter
+@Setter
 @Entity
+@RequiredArgsConstructor
 @Table(name = "accommodation_units")
 public class AccommodationUnit extends AbstractEntity<Long> {
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -30,21 +31,19 @@ public class AccommodationUnit extends AbstractEntity<Long> {
     @Column(nullable = false)
     private Integer capacity;
 
-    @Column(nullable = false)
     private Double area;
 
-    @Column(nullable = false)
     private Integer floor;
 
     @Column(name = "is_available", nullable = false)
-    private Boolean isAvailable;
+    private Boolean isAvailable = Boolean.TRUE;
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccUnitImages> images = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccUnitImages> images = new HashSet<>();
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccUnitDictionary> dictionaries = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccUnitDictionary> dictionaries = new HashSet<>();
 
-    @OneToMany(mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AccUnitTariffs> tariffs = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AccUnitTariffs> tariffs = new HashSet<>();
 }

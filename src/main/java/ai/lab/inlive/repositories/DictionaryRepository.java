@@ -1,8 +1,9 @@
 package ai.lab.inlive.repositories;
 
+import ai.lab.inlive.dto.params.DictionarySearchParams;
 import ai.lab.inlive.entities.Dictionary;
 import ai.lab.inlive.entities.enums.DictionaryKey;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,25 +18,28 @@ public interface DictionaryRepository extends JpaRepository<Dictionary, Long> {
 
     Optional<Dictionary> findByIdAndIsDeletedFalse(Long id);
 
-    @Query(value = "SELECT * FROM dictionaries d WHERE TRUE " +
-           "AND (:isDeleted IS NULL OR d.is_deleted = :isDeleted) " +
-           "AND (:keys IS NULL OR array_length(CAST(:keys AS text[]), 1) IS NULL OR " +
-           "     EXISTS (SELECT 1 FROM unnest(CAST(:keys AS text[])) AS key_item " +
-           "             WHERE UPPER(d.key::text) LIKE UPPER('%' || key_item || '%'))) " +
-           "AND (:value IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || :value || '%'))",
-           countQuery = "SELECT COUNT(*) FROM dictionaries d WHERE TRUE " +
-           "AND (:isDeleted IS NULL OR d.is_deleted = :isDeleted) " +
-           "AND (:keys IS NULL OR array_length(CAST(:keys AS text[]), 1) IS NULL OR " +
-           "     EXISTS (SELECT 1 FROM unnest(CAST(:keys AS text[])) AS key_item " +
-           "             WHERE UPPER(d.key::text) LIKE UPPER('%' || key_item || '%'))) " +
-           "AND (:value IS NULL OR UPPER(d.value::text) LIKE UPPER('%' || :value || '%'))",
-           nativeQuery = true)
-    Page<Dictionary> findWithFilters(
-            @Param("isDeleted") Boolean isDeleted,
-            @Param("keys") String[] keys,
-            @Param("value") String value,
-            Pageable pageable
-    );
+    @Query(value = """
+            SELECT d.*
+            FROM dictionaries d
+            WHERE (:#{#params.isDeleted} IS NULL OR d.is_deleted = :#{#params.isDeleted})
+              AND (
+                   :#{#params.keys == null || #params.keys.isEmpty()} = TRUE
+                   OR d."key" IN (:#{#params.keys.![name()]})
+              )
+              AND (:#{#params.value} IS NULL OR UPPER(d.value) LIKE UPPER(CONCAT('%', :#{#params.value}, '%')))
+            """,
+            countQuery = """
+                    SELECT COUNT(*)
+                    FROM dictionaries d
+                    WHERE (:#{#params.isDeleted} IS NULL OR d.is_deleted = :#{#params.isDeleted})
+                      AND (
+                           :#{#params.keys == null || #params.keys.isEmpty()} = TRUE
+                           OR d."key" IN (:#{#params.keys.![name()]})
+                      )
+                      AND (:#{#params.value} IS NULL OR UPPER(d.value) LIKE UPPER(CONCAT('%', :#{#params.value}, '%')))
+                    """,
+            nativeQuery = true)
+    Page<Dictionary> findWithFilters(@Param("params") DictionarySearchParams params, Pageable pageable);
 
-    boolean existsByKeyAndIsDeletedFalse(@NotBlank DictionaryKey key);
+    boolean existsByKeyAndIsDeletedFalse(@NotNull DictionaryKey key);
 }

@@ -8,6 +8,15 @@ spring:
     username: ${KEYCLOAK_ADMIN:admin}
     password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
     send-email: false
+    file-api:
+      name: file-api
+      url: ${FILE_API_URL:http://localhost:8888}
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+      enabled: true
 
   datasource:
     url: jdbc:postgresql://${POSTGRES_ADDRESS:localhost}:${POSTGRES_ADDRESS_PORT:5434}/${POSTGRES_DB_NAME:inlive}

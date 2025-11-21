@@ -16,7 +16,11 @@ import static ai.lab.inlive.constants.ValueConstants.*;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Utils {
     public static String extractIdFromToken(JwtAuthenticationToken token) {
-        return token.getToken().getClaim(USER_ID_CLAIM);
+        String userId = token.getToken().getClaim(USER_ID_CLAIM);
+        if (userId == null) {
+            userId = token.getToken().getSubject();
+        }
+        return userId;
     }
 
     public static String extractNameFromToken(JwtAuthenticationToken token) {
