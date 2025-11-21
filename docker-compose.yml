@@ -17,6 +17,7 @@ services:
       - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
       - DATABASE_USERNAME=${DATABASE_USERNAME}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - FILE_API_URL=${FILE_API_URL}
 
     depends_on:
       - postgres
