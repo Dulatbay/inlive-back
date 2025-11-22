@@ -4,7 +4,7 @@ spring:
     keycloak-url: ${KEYCLOAK_URL:http://localhost:8182}
     realm: master
     client-id: inlive
-    client-secret: ${KEYCLOAK_CLIENT_SECRET:GxMys665WU9UIBHGc0yToYXgqXTicnbi}
+    client-secret: ${KEYCLOAK_CLIENT_SECRET:Mr8VAhWIavIdsTpPSL48xP9o8m907BRL}
     username: ${KEYCLOAK_ADMIN:admin}
     password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
     send-email: false
