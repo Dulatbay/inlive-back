@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
                 ),
                 @Server(
                         description = "PROD ENV",
-                        url = "https://inlive-hotel.kz/api"
+                        url = "http://63.178.189.113:8888/api"
                 )
         },
         security = {
