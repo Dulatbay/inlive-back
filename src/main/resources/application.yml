@@ -1,12 +1,12 @@
 spring:
   application:
     name: inlive
-    keycloak-url: ${KEYCLOAK_URL:http://localhost:8182}
+    keycloak-url: ${KEYCLOAK_URL:http://63.178.189.113:8182}
     realm: master
     client-id: inlive
     client-secret: ${KEYCLOAK_CLIENT_SECRET:Mr8VAhWIavIdsTpPSL48xP9o8m907BRL}
-    username: ${KEYCLOAK_ADMIN:admin}
-    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    username: ${KEYCLOAK_ADMIN:inlive-admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:inlive-admin}
     send-email: false
     file-api:
       name: file-api
