@@ -118,6 +118,13 @@ public class ReservationController {
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Получить все бронирования для единицы размещения",
             description = "Получение всех бронирований для конкретной квартиры/номера")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список бронирований успешно получен"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Единица размещения не найдена", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
     @GetMapping("/by-unit/{unitId}")
     public ResponseEntity<PaginatedResponse<ReservationResponse>> getReservationsByUnitId(
             @Parameter(description = "ID единицы размещения", example = "1")
@@ -132,6 +139,34 @@ public class ReservationController {
                 Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
         );
         Page<ReservationResponse> response = reservationService.getReservationsByUnitId(unitId, pageable);
+        return ResponseEntity.ok(new PaginatedResponse<>(response));
+    }
+
+    @AccessForAdminsAndSuperManagers
+    @Operation(summary = "Получить все бронирования для размещения",
+            description = "Получение всех бронирований для конкретного размещения (accommodation). " +
+                    "Включает бронирования всех единиц размещения (units) в данном accommodation")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Список бронирований успешно получен"),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Размещение не найдено", content = @Content),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+    })
+    @GetMapping("/by-accommodation/{accId}")
+    public ResponseEntity<PaginatedResponse<ReservationResponse>> getReservationsByAccommodationId(
+            @Parameter(description = "ID размещения (accommodation)", example = "1")
+            @PathVariable Long accId,
+            @Parameter(description = "Номер страницы (начиная с 0)") @RequestParam(defaultValue = "0") Integer page,
+            @Parameter(description = "Размер страницы") @RequestParam(defaultValue = "20") Integer size,
+            @Parameter(description = "Поле для сортировки") @RequestParam(defaultValue = "createdAt") String sortBy,
+            @Parameter(description = "Направление сортировки (asc/desc)") @RequestParam(defaultValue = "desc") String sortDirection) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
+        Page<ReservationResponse> response = reservationService.getReservationsByAccommodationId(accId, pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 
