@@ -31,6 +31,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final PriceRequestRepository priceRequestRepository;
     private final AccSearchRequestRepository accSearchRequestRepository;
     private final AccommodationUnitRepository accommodationUnitRepository;
+    private final AccommodationRepository accommodationRepository;
     private final ReservationMapper reservationMapper;
 
     @Override
@@ -141,6 +142,22 @@ public class ReservationServiceImpl implements ReservationService {
 
         Page<Reservation> reservations = reservationRepository.findActiveByUnitId(unitId, pageable);
 
+        return reservations.map(reservationMapper::toDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReservationResponse> getReservationsByAccommodationId(Long accommodationId, Pageable pageable) {
+        log.info("Fetching reservations for accommodation: {}", accommodationId);
+
+        accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
+                        "ACCOMMODATION_NOT_FOUND",
+                        "Accommodation not found with ID: " + accommodationId));
+
+        Page<Reservation> reservations = reservationRepository.findByAccommodationId(accommodationId, pageable);
+
+        log.info("Found {} reservations for accommodation {}", reservations.getTotalElements(), accommodationId);
         return reservations.map(reservationMapper::toDto);
     }
 

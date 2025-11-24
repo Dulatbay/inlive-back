@@ -21,6 +21,12 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Page<Reservation> findActiveByUnitId(@Param("unitId") Long unitId, Pageable pageable);
 
     @Query("SELECT r FROM Reservation r " +
+            "WHERE r.unit.accommodation.id = :accommodationId " +
+            "AND r.isDeleted = false " +
+            "ORDER BY r.createdAt DESC")
+    Page<Reservation> findByAccommodationId(@Param("accommodationId") Long accommodationId, Pageable pageable);
+
+    @Query("SELECT r FROM Reservation r " +
             "WHERE r.unit.id = :unitId " +
             "AND r.status = 'WAITING_TO_APPROVE' " +
             "AND r.isDeleted = false " +

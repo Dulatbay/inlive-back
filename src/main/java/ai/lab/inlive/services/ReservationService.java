@@ -18,6 +18,8 @@ public interface ReservationService {
 
     Page<ReservationResponse> getReservationsByUnitId(Long unitId, Pageable pageable);
 
+    Page<ReservationResponse> getReservationsByAccommodationId(Long accommodationId, Pageable pageable);
+
     Page<ReservationResponse> getPendingReservationsByUnitId(Long unitId, Pageable pageable);
 
     Page<ReservationResponse> getReservationsBySearchRequestId(Long searchRequestId, Pageable pageable);
