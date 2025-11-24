@@ -71,6 +71,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                     sendEmail(userId);
                 } catch (Exception e) {
                     log.error("Exception: ", e);
+                    // todo: add translation for this message or delete this message
                     throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.invalid-email", null, LocaleContextHolder.getLocale()));
                 }
             }
