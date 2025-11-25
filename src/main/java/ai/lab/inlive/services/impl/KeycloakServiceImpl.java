@@ -507,19 +507,19 @@ public class KeycloakServiceImpl implements KeycloakService {
     private Cookie buildRoleCookie(String role) {
         Cookie cookie = new Cookie("USER_ROLE", role);
         cookie.setHttpOnly(false);
-        cookie.setSecure(true);
+        cookie.setSecure(false); // prod: true
         cookie.setPath("/");
-        cookie.setAttribute("SameSite", "None");
+        cookie.setAttribute("SameSite", "Lax"); // prod: "Strict" or "None
         return cookie;
     }
 
     private Cookie buildRefreshTokenCookie(String refreshToken, Integer refreshExpiresIn) {
         Cookie cookie = new Cookie(TokenType.refreshToken.name(), refreshToken);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(false);
         cookie.setPath("/");
         cookie.setMaxAge(refreshExpiresIn);
-        cookie.setAttribute("SameSite", "None");
+        cookie.setAttribute("SameSite", "Lax");
         return cookie;
     }
 

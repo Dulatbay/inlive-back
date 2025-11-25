@@ -1,6 +1,17 @@
 version: "3.9"
 
 services:
+  front:
+    image: mobkus837/ui-tap-front:latest
+    container_name: 'inlive-front'
+    networks:
+      - app-platform
+    restart: unless-stopped
+    environment:
+      - API_URL=${API_URL}
+      - BUCKET_URL=${BUCKET_URL}
+    ports:
+      - "3000:3000"
   dozzle:
     image: amir20/dozzle:latest
     container_name: inlive-dozzle
