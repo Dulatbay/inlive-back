@@ -1,14 +1,15 @@
 package ai.lab.inlive.services.impl;
 
+import ai.lab.inlive.dto.response.UserResponse;
 import ai.lab.inlive.entities.User;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
+import ai.lab.inlive.mappers.UserMapper;
 import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;
 import ai.lab.inlive.services.UserService;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,7 +31,7 @@ public class UserServiceImpl implements UserService {
     private final KeycloakService keycloakService;
     private final EntityManager entityManager;
     private final MessageSource messageSource;
-
+    private final UserMapper userMapper;
 
     @Value("${spring.application.username}")
     private String keycloakUsername;
@@ -128,5 +130,19 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
             log.info("New tester created");
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(String keycloakId) {
+        log.info("Fetching current user info for keycloakId: {}", keycloakId);
+
+        User user = userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "User not found with Keycloak ID: " + keycloakId));
+
+        log.info("Successfully fetched user info: {} {}", user.getFirstName(), user.getLastName());
+        return userMapper.toDto(user);
     }
 }

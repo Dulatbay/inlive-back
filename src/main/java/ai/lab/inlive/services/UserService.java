@@ -1,5 +1,6 @@
 package ai.lab.inlive.services;
 
+import ai.lab.inlive.dto.response.UserResponse;
 import ai.lab.inlive.entities.User;
 import jakarta.transaction.Transactional;
 
@@ -8,4 +9,6 @@ public interface UserService {
 
     @Transactional
     void syncUsersBetweenDBAndKeycloak();
+
+    UserResponse getCurrentUser(String keycloakId);
 }
