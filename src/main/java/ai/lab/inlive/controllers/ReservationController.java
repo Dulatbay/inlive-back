@@ -235,7 +235,7 @@ public class ReservationController {
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 
-    @ai.lab.inlive.security.authorization.AccessForAdminsAndClients
+    @AccessForAdminsAndClients
     @Operation(summary = "Отменить бронирование (для CLIENT)",
             description = "Клиент может преждевременно отменить свою бронь минимум за 1 день до даты заезда. " +
                     "При отмене статус брони меняется на CANCELED. " +
