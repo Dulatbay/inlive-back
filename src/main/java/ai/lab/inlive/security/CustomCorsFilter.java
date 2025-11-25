@@ -14,7 +14,7 @@ import java.util.List;
 
 @Slf4j
 public class CustomCorsFilter extends OncePerRequestFilter {
-    private final List<String> allowedOrigins = Arrays.asList("http://localhost:3000", "http://10.36.40.16:3000", "http://localhost:3001", "https://ui-tap-front.vercel.app", "http://192.168.1.157:3000");
+    private final List<String> allowedOrigins = Arrays.asList("http://localhost:3000", "http://10.36.40.16:3000", "http://localhost:3001", "https://ui-tap-front.vercel.app", "http://192.168.1.157:3000", "http://63.178.189.113:3000/");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
