@@ -11,29 +11,29 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class KeycloakBaseUser {
-    @NotBlank(message = "First name is required")
-    @Size(max = 255, message = "First name must not exceed 255 characters")
+    @NotBlank(message = "{validation.firstName.required}")
+    @Size(max = 255, message = "{validation.firstName.size}")
     private String firstName;
 
-    @NotBlank(message = "Last name is required")
-    @Size(max = 255, message = "Last name must not exceed 255 characters")
+    @NotBlank(message = "{validation.lastName.required}")
+    @Size(max = 255, message = "{validation.lastName.size}")
     private String lastName;
 
-    @NotBlank(message = "Username is required")
-    @Size(max = 255, message = "Username must not exceed 255 characters")
+    @NotBlank(message = "{validation.username.required}")
+    @Size(max = 255, message = "{validation.username.size}")
     private String username;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email must be a valid email address")
-    @Size(max = 255, message = "Email must not exceed 255 characters")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
+    @Size(max = 255, message = "{validation.email.size}")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 8, max = 255, message = "Password must be between 8 and 255 characters")
+    @NotBlank(message = "{validation.password.required}")
+    @Size(min = 8, max = 255, message = "{validation.password.size}")
     private String password;
 
-    @NotBlank(message = "Phone number is required")
-    @Pattern(regexp = "^\\+?[0-9]{7,20}$", message = "Phone number must be valid and contain 7 to 20 digits")
+    @NotBlank(message = "{validation.phoneNumber.required}")
+    @Pattern(regexp = "^\\+?[0-9]{7,20}$", message = "{validation.phoneNumber.pattern}")
     private String phoneNumber;
 
     @JsonIgnore

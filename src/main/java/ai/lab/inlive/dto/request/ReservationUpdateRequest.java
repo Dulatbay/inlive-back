@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Schema(description = "Запрос на обновление статуса бронирования (для SUPER_MANAGER)")
 public class ReservationUpdateRequest {
-    @NotNull(message = "Status is required")
+    @NotNull(message = "{validation.reservation.status.required}")
     @Schema(description = "Новый статус бронирования (APPROVED - принять, REJECTED - отказать)",
             example = "APPROVED",
             allowableValues = {"APPROVED", "REJECTED"})

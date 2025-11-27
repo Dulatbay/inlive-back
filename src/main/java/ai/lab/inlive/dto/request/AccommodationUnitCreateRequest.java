@@ -12,22 +12,22 @@ import java.util.List;
 
 @Data
 public class AccommodationUnitCreateRequest {
-    @NotNull(message = "Accommodation ID is required")
+    @NotNull(message = "{validation.accommodationUnit.accommodationId.required}")
     private Long accommodationId;
 
-    @NotNull(message = "Unit type is required")
+    @NotNull(message = "{validation.accommodationUnit.unitType.required}")
     private UnitType unitType;
 
-    @NotBlank(message = "Name is required")
-    @Size(max = 255, message = "Name must not exceed 255 characters")
+    @NotBlank(message = "{validation.accommodationUnit.name.required}")
+    @Size(max = 255, message = "{validation.accommodationUnit.name.size}")
     private String name;
 
-    @NotBlank(message = "Description is required")
-    @Size(max = 5000, message = "Description must not exceed 5000 characters")
+    @NotBlank(message = "{validation.accommodationUnit.description.required}")
+    @Size(max = 5000, message = "{validation.accommodationUnit.description.size}")
     private String description;
 
-    @NotNull(message = "Capacity is required")
-    @Min(value = 1, message = "Capacity must be at least 1")
+    @NotNull(message = "{validation.accommodationUnit.capacity.required}")
+    @Min(value = 1, message = "{validation.accommodationUnit.capacity.min}")
     private Integer capacity;
 
     private Double area;
