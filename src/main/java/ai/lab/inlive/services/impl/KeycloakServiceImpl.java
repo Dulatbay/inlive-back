@@ -71,8 +71,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                     sendEmail(userId);
                 } catch (Exception e) {
                     log.error("Exception: ", e);
-                    // todo: add translation for this message or delete this message
-                    throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.invalid-email", null, LocaleContextHolder.getLocale()));
+                    throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.invalidEmail", null, LocaleContextHolder.getLocale()));
                 }
             }
 
@@ -89,7 +88,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                 userRepository.save(user);
             } catch (Exception e) {
                 log.error("Failed to save user in the database: {}", user, e);
-                throw new IllegalStateException("Failed to save user in the database.", e);
+                throw new IllegalStateException(messageSource.getMessage("error.keycloak.failedToSaveUser", null, LocaleContextHolder.getLocale()), e);
             }
 
             return userResource.toRepresentation();
@@ -117,7 +116,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                 var object = response.readEntity(KeycloakError.class);
                 throw new IllegalArgumentException(object.getErrorMessage());
             } else {
-                throw new InternalServerErrorException(messageSource.getMessage("services-impl.keycloak-service-impl.unknown-error", null, LocaleContextHolder.getLocale()));
+                throw new InternalServerErrorException(messageSource.getMessage("error.keycloak.unknownError", null, LocaleContextHolder.getLocale()));
             }
         }
     }
@@ -199,7 +198,7 @@ public class KeycloakServiceImpl implements KeycloakService {
     @Override
     public AuthResponse getAuthResponse(String username, String password, HttpServletResponse response1) {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new BadRequestException("Username or password is empty");
+            throw new BadRequestException(messageSource.getMessage("error.auth.usernameOrPasswordEmpty", null, LocaleContextHolder.getLocale()));
         }
 
         String tokenUrl = buildTokenEndpoint("token");
@@ -232,10 +231,11 @@ public class KeycloakServiceImpl implements KeycloakService {
 
                 return buildAuthResponseDto(accessToken, Long.valueOf(expiresIn), tokenType);
             } else {
-                throw new RuntimeException("Failed to get auth response: " + response.getStatusCode());
+                throw new RuntimeException(messageSource.getMessage("error.auth.failedToGetAuthResponse", 
+                        new Object[]{response.getStatusCode()}, LocaleContextHolder.getLocale()));
             }
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid username or password: " + e.getMessage());
+            throw new IllegalArgumentException(messageSource.getMessage("error.auth.invalidCredentials", null, LocaleContextHolder.getLocale()) + ": " + e.getMessage());
         }
     }
 
@@ -253,7 +253,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         String refreshToken = refreshTokenCookie.getValue();
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new IllegalArgumentException("Refresh token is missing or invalid during logout");
+            throw new IllegalArgumentException(messageSource.getMessage("error.auth.refreshTokenInvalid", null, LocaleContextHolder.getLocale()));
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -284,11 +284,13 @@ public class KeycloakServiceImpl implements KeycloakService {
                 log.info("User logged out successfully");
             } else {
                 log.error("Failed to logout user: {}", response.getStatusCode());
-                throw new RuntimeException("Failed to logout user: " + response.getStatusCode());
+                throw new RuntimeException(messageSource.getMessage("error.auth.failedToLogout", 
+                        new Object[]{response.getStatusCode()}, LocaleContextHolder.getLocale()));
             }
         } catch (Exception e) {
             log.error("Error during logout: ", e);
-            throw new RuntimeException("Error during logout: " + e.getMessage());
+            throw new RuntimeException(messageSource.getMessage("error.auth.logoutError", 
+                    new Object[]{e.getMessage()}, LocaleContextHolder.getLocale()));
         }
     }
 
@@ -317,7 +319,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         List<UserRepresentation> users = usersResource.search(keycloakBaseUser.getEmail(), 0, 1);
 
         if (users.isEmpty()) {
-            throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.user-not-found-by-email", null, LocaleContextHolder.getLocale()));
+            throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.userNotFoundByEmail", null, LocaleContextHolder.getLocale()));
         }
         UserRepresentation userToUpdate = users.getFirst();
         userToUpdate.setFirstName(keycloakBaseUser.getFirstName());
@@ -349,7 +351,7 @@ public class KeycloakServiceImpl implements KeycloakService {
             userResource.resetPassword(newPassword);
         } catch (NotAuthorizedException e) {
             log.error("Old password is incorrect for user with ID: {}", keycloakId);
-            throw new IllegalArgumentException(messageSource.getMessage("services-impl.keycloak-service-impl.incorrect-old-password", null, LocaleContextHolder.getLocale()));
+            throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.incorrectOldPassword", null, LocaleContextHolder.getLocale()));
         }
     }
 
@@ -367,7 +369,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                 || isBlank(r.getLastName())
                 || isBlank(r.getPassword())
                 || isBlank(r.getFirstName())) {
-            throw new IllegalArgumentException("Invalid registration request");
+            throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.invalidRegistrationRequest", null, LocaleContextHolder.getLocale()));
         }
     }
 
@@ -406,7 +408,7 @@ public class KeycloakServiceImpl implements KeycloakService {
         String refreshToken = refreshTokenCookie.getValue();
 
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new IllegalArgumentException("Refresh token is required");
+            throw new IllegalArgumentException(messageSource.getMessage("error.auth.refreshTokenRequired", null, LocaleContextHolder.getLocale()));
         }
 
         String url = buildTokenEndpoint("token");
@@ -443,19 +445,21 @@ public class KeycloakServiceImpl implements KeycloakService {
                         .tokenType(body.tokenType())
                         .build();
             }
-            throw new RuntimeException("Unexpected refresh response: " + resp.getStatusCode());
+            throw new RuntimeException(messageSource.getMessage("error.auth.unexpectedRefreshResponse", 
+                    new Object[]{resp.getStatusCode()}, LocaleContextHolder.getLocale()));
 
         } catch (HttpClientErrorException e) {
             String msg = e.getResponseBodyAsString();
             if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
-                throw new IllegalArgumentException("Refresh failed: invalid_grant (refresh token expired/rotated or session not active). Body: " + msg);
+                throw new IllegalArgumentException(messageSource.getMessage("error.auth.refreshFailed.invalidGrant", null, LocaleContextHolder.getLocale()) + ". Body: " + msg);
             }
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-                throw new IllegalStateException("Refresh failed: invalid_client (check client credentials). Body: " + msg);
+                throw new IllegalStateException(messageSource.getMessage("error.auth.refreshFailed.invalidClient", null, LocaleContextHolder.getLocale()) + ". Body: " + msg);
             }
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Refresh failed: " + e.getMessage(), e);
+            throw new RuntimeException(messageSource.getMessage("error.auth.refreshFailed", 
+                    new Object[]{e.getMessage()}, LocaleContextHolder.getLocale()), e);
         }
     }
 
@@ -526,12 +530,12 @@ public class KeycloakServiceImpl implements KeycloakService {
     private Cookie extractRefreshTokenCookie(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
-            throw new IllegalArgumentException("Refresh token is missing");
+            throw new IllegalArgumentException(messageSource.getMessage("error.auth.refreshTokenMissing", null, LocaleContextHolder.getLocale()));
         }
         return Arrays.stream(cookies)
                 .filter(cookie -> cookie.getName().equals(TokenType.refreshToken.name()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Refresh token is missing"));
+                .orElseThrow(() -> new IllegalArgumentException(messageSource.getMessage("error.auth.refreshTokenMissing", null, LocaleContextHolder.getLocale())));
     }
 
     private AuthResponse buildAuthResponseDto(String accessToken, Long expiresIn, String tokenType) {
