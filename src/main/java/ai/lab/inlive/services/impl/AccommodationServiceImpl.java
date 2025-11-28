@@ -17,6 +17,8 @@ import ai.lab.inlive.services.AccommodationService;
 import ai.lab.inlivefilemanager.client.api.FileManagerApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,7 @@ public class AccommodationServiceImpl implements AccommodationService {
     private final AccDictionaryRepository accDictionaryRepository;
     private final AccSearchRequestRepository accSearchRequestRepository;
     private final AccSearchRequestMapper searchRequestMapper;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -57,11 +60,17 @@ public class AccommodationServiceImpl implements AccommodationService {
         var accDictionaries = new HashSet<AccDictionary>();
 
         var city = cityRepository.findById(request.getCityId())
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.cityNotFound", 
+                                new Object[]{request.getCityId()}, LocaleContextHolder.getLocale())));
         var district = districtRepository.findById(request.getDistrictId())
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", "District not found with ID: " + request.getDistrictId()));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.districtNotFound", 
+                                new Object[]{request.getDistrictId()}, LocaleContextHolder.getLocale())));
         var owner = userRepository.findByKeycloakId(createdBy)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + createdBy));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.userNotFound", 
+                                new Object[]{createdBy}, LocaleContextHolder.getLocale())));
 
         var accommodation = mapper.toEntity(request);
 
@@ -74,9 +83,13 @@ public class AccommodationServiceImpl implements AccommodationService {
             request.getServiceDictionaryIds()
                     .forEach(serviceDictionaryId -> {
                         var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(serviceDictionaryId)
-                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + serviceDictionaryId));
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                                        messageSource.getMessage("services.accommodation.dictionaryNotFound", 
+                                                new Object[]{serviceDictionaryId}, LocaleContextHolder.getLocale())));
                         if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
-                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + serviceDictionaryId + " must have key ACC_SERVICE");
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", 
+                                    messageSource.getMessage("services.accommodation.invalidDictionaryKey", 
+                                            new Object[]{serviceDictionaryId, "ACC_SERVICE"}, LocaleContextHolder.getLocale()));
                         }
                         accDictionaries.add(mapper.toDictionaryLink(accommodation, dictionary));
                     });
@@ -86,9 +99,13 @@ public class AccommodationServiceImpl implements AccommodationService {
             request.getConditionDictionaryIds()
                     .forEach(conditionDictionaryId -> {
                         var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(conditionDictionaryId)
-                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + conditionDictionaryId));
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                                        messageSource.getMessage("services.accommodation.dictionaryNotFound", 
+                                                new Object[]{conditionDictionaryId}, LocaleContextHolder.getLocale())));
                         if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
-                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + conditionDictionaryId + " must have key ACC_CONDITION");
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", 
+                                    messageSource.getMessage("services.accommodation.invalidDictionaryKey", 
+                                            new Object[]{conditionDictionaryId, "ACC_CONDITION"}, LocaleContextHolder.getLocale()));
                         }
                         accDictionaries.add(mapper.toDictionaryLink(accommodation, dictionary));
                     });
@@ -117,7 +134,9 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Fetching accommodation by ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         return mapper.toDto(accommodation, imageMapper);
     }
@@ -138,17 +157,23 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Updating accommodation with ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (request.getCityId() != null) {
             City city = cityRepository.findById(request.getCityId())
-                    .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", "City not found with ID: " + request.getCityId()));
+                    .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "CITY_NOT_FOUND", 
+                            messageSource.getMessage("services.accommodation.cityNotFound", 
+                                    new Object[]{request.getCityId()}, LocaleContextHolder.getLocale())));
             accommodation.setCity(city);
         }
 
         if (request.getDistrictId() != null) {
             District district = districtRepository.findById(request.getDistrictId())
-                    .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", "District not found with ID: " + request.getDistrictId()));
+                    .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DISTRICT_NOT_FOUND", 
+                            messageSource.getMessage("services.accommodation.districtNotFound", 
+                                    new Object[]{request.getDistrictId()}, LocaleContextHolder.getLocale())));
             accommodation.setDistrict(district);
         }
 
@@ -188,11 +213,13 @@ public class AccommodationServiceImpl implements AccommodationService {
             for (Long dictionaryId : request.getServiceDictionaryIds()) {
                 Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
                         .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
-                                "Dictionary not found with ID: " + dictionaryId));
+                                messageSource.getMessage("services.accommodation.dictionaryNotFound", 
+                                        new Object[]{dictionaryId}, LocaleContextHolder.getLocale())));
 
                 if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
                     throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY",
-                            "Dictionary ID " + dictionaryId + " must have key ACC_SERVICE");
+                            messageSource.getMessage("services.accommodation.invalidDictionaryKey", 
+                                    new Object[]{dictionaryId, "ACC_SERVICE"}, LocaleContextHolder.getLocale()));
                 }
 
                 AccDictionary link = mapper.toDictionaryLink(accommodation, dictionary);
@@ -209,11 +236,13 @@ public class AccommodationServiceImpl implements AccommodationService {
             for (Long dictionaryId : request.getConditionDictionaryIds()) {
                 Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
                         .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
-                                "Dictionary not found with ID: " + dictionaryId));
+                                messageSource.getMessage("services.accommodation.dictionaryNotFound", 
+                                        new Object[]{dictionaryId}, LocaleContextHolder.getLocale())));
 
                 if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
                     throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY",
-                            "Dictionary ID " + dictionaryId + " must have key ACC_CONDITION");
+                            messageSource.getMessage("services.accommodation.invalidDictionaryKey", 
+                                    new Object[]{dictionaryId, "ACC_CONDITION"}, LocaleContextHolder.getLocale()));
                 }
 
                 AccDictionary link = mapper.toDictionaryLink(accommodation, dictionary);
@@ -229,7 +258,9 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Updating photos for accommodation with ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (photos != null && !photos.isEmpty()) {
             List<MultipartFile> validPhotos = photos.stream()
@@ -259,11 +290,14 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Deleting photos for accommodation with ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (photoUrls == null || photoUrls.isEmpty()) {
             log.warn("No photo URLs provided for deletion");
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Photo URLs list cannot be empty");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", 
+                    messageSource.getMessage("services.accommodation.photoUrlsEmpty", null, LocaleContextHolder.getLocale()));
         }
 
         List<String> urlsToDelete = photoUrls.stream()
@@ -274,7 +308,8 @@ public class AccommodationServiceImpl implements AccommodationService {
 
         if (urlsToDelete.isEmpty()) {
             log.warn("No valid photo URLs provided for deletion");
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "No valid photo URLs provided");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", 
+                    messageSource.getMessage("services.accommodation.noValidPhotoUrls", null, LocaleContextHolder.getLocale()));
         }
 
         int deletedCount = 0;
@@ -288,7 +323,7 @@ public class AccommodationServiceImpl implements AccommodationService {
         if (imagesToRemove.isEmpty()) {
             log.warn("No matching photos found for deletion");
             throw new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "PHOTOS_NOT_FOUND",
-                    "No photos found matching the provided URLs");
+                    messageSource.getMessage("services.accommodation.photosNotFound", null, LocaleContextHolder.getLocale()));
         }
 
         for (AccImages image : imagesToRemove) {
@@ -310,7 +345,7 @@ public class AccommodationServiceImpl implements AccommodationService {
                     deletedCount, id, failedCount);
         } else {
             throw new DbObjectNotFoundException(HttpStatus.INTERNAL_SERVER_ERROR, "DELETE_FAILED",
-                    "Failed to delete any photos from storage");
+                    messageSource.getMessage("services.accommodation.deleteFailed", null, LocaleContextHolder.getLocale()));
         }
     }
 
@@ -327,7 +362,9 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Deleting accommodation with ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         accommodation.softDelete();
 
@@ -342,10 +379,14 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Approving accommodation with ID: {} by: {}", id, approvedBy);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         var approver = userRepository.findByKeycloakId(approvedBy)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + approvedBy));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.userNotFound", 
+                                new Object[]{approvedBy}, LocaleContextHolder.getLocale())));
 
         accommodation.setApproved(true);
         accommodation.setApprovedBy(approver);
@@ -360,7 +401,9 @@ public class AccommodationServiceImpl implements AccommodationService {
         log.info("Rejecting accommodation with ID: {}", id);
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         var rejecter = userRepository.findByKeycloakId(rejectedBy)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "User not found with Keycloak ID: " + rejectedBy));

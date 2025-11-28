@@ -14,6 +14,8 @@ import ai.lab.inlive.repositories.*;
 import ai.lab.inlive.services.ReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -33,6 +35,7 @@ public class ReservationServiceImpl implements ReservationService {
     private final AccommodationUnitRepository accommodationUnitRepository;
     private final AccommodationRepository accommodationRepository;
     private final ReservationMapper reservationMapper;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -43,18 +46,19 @@ public class ReservationServiceImpl implements ReservationService {
                 .findByIdAndIsDeletedFalse(request.getPriceRequestId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "PRICE_REQUEST_NOT_FOUND",
-                        "Price request not found with ID: " + request.getPriceRequestId()));
+                        messageSource.getMessage("services.reservation.priceRequestNotFound", 
+                                new Object[]{request.getPriceRequestId()}, LocaleContextHolder.getLocale())));
 
         if (priceRequest.getClientResponseStatus() != ClientResponseStatus.ACCEPTED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "PRICE_REQUEST_NOT_ACCEPTED",
-                    "Price request must be accepted by client before creating reservation");
+                    messageSource.getMessage("services.reservation.priceRequestNotAccepted", null, LocaleContextHolder.getLocale()));
         }
 
         if (reservationRepository.existsByPriceRequestId(request.getPriceRequestId())) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "RESERVATION_ALREADY_EXISTS",
-                    "Reservation already exists for this price request");
+                    messageSource.getMessage("services.reservation.alreadyExists", null, LocaleContextHolder.getLocale()));
         }
 
         Reservation reservation = new Reservation();
@@ -82,19 +86,21 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation reservation = reservationRepository.findByIdAndIsDeletedFalse(reservationId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "RESERVATION_NOT_FOUND",
-                        "Reservation not found with ID: " + reservationId));
+                        messageSource.getMessage("services.reservation.notFound", 
+                                new Object[]{reservationId}, LocaleContextHolder.getLocale())));
 
         if (reservation.getStatus() != ReservationStatus.WAITING_TO_APPROVE) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "RESERVATION_NOT_WAITING",
-                    "Reservation is not waiting for approval. Current status: " + reservation.getStatus());
+                    messageSource.getMessage("services.reservation.notWaiting", 
+                            new Object[]{reservation.getStatus()}, LocaleContextHolder.getLocale()));
         }
 
         if (request.getStatus() != ReservationStatus.APPROVED &&
                 request.getStatus() != ReservationStatus.REJECTED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_STATUS",
-                    "Status must be APPROVED or REJECTED");
+                    messageSource.getMessage("services.reservation.invalidStatus", null, LocaleContextHolder.getLocale()));
         }
 
         reservation.setStatus(request.getStatus());
@@ -125,7 +131,8 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation reservation = reservationRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "RESERVATION_NOT_FOUND",
-                        "Reservation not found with ID: " + id));
+                        messageSource.getMessage("services.reservation.notFound", 
+                                new Object[]{id}, LocaleContextHolder.getLocale())));
 
         return reservationMapper.toDto(reservation);
     }
@@ -138,7 +145,8 @@ public class ReservationServiceImpl implements ReservationService {
         accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_UNIT_NOT_FOUND",
-                        "Accommodation Unit not found with ID: " + unitId));
+                        messageSource.getMessage("services.reservation.accommodationUnitNotFound", 
+                                new Object[]{unitId}, LocaleContextHolder.getLocale())));
 
         Page<Reservation> reservations = reservationRepository.findActiveByUnitId(unitId, pageable);
 
@@ -153,7 +161,8 @@ public class ReservationServiceImpl implements ReservationService {
         accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_NOT_FOUND",
-                        "Accommodation not found with ID: " + accommodationId));
+                        messageSource.getMessage("services.reservation.accommodationNotFound", 
+                                new Object[]{accommodationId}, LocaleContextHolder.getLocale())));
 
         Page<Reservation> reservations = reservationRepository.findByAccommodationId(accommodationId, pageable);
 
@@ -169,7 +178,8 @@ public class ReservationServiceImpl implements ReservationService {
         accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_UNIT_NOT_FOUND",
-                        "Accommodation Unit not found with ID: " + unitId));
+                        messageSource.getMessage("services.reservation.accommodationUnitNotFound", 
+                                new Object[]{unitId}, LocaleContextHolder.getLocale())));
 
         Page<Reservation> reservations = reservationRepository.findPendingByUnitId(unitId, pageable);
         log.info("Found {} pending reservations for unit {}", reservations.getTotalElements(), unitId);
@@ -185,7 +195,8 @@ public class ReservationServiceImpl implements ReservationService {
         accSearchRequestRepository.findByIdAndIsDeletedFalse(searchRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
-                        "Search request not found with ID: " + searchRequestId));
+                        messageSource.getMessage("services.reservation.searchRequestNotFound", 
+                                new Object[]{searchRequestId}, LocaleContextHolder.getLocale())));
 
         Page<Reservation> reservations = reservationRepository.findBySearchRequestId(searchRequestId, pageable);
 
@@ -200,19 +211,21 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation reservation = reservationRepository.findByIdAndIsDeletedFalse(reservationId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "RESERVATION_NOT_FOUND",
-                        "Reservation not found with ID: " + reservationId));
+                        messageSource.getMessage("services.reservation.notFound", 
+                                new Object[]{reservationId}, LocaleContextHolder.getLocale())));
 
         if (reservation.getStatus() != ReservationStatus.APPROVED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "RESERVATION_NOT_APPROVED",
-                    "Reservation must be in APPROVED status. Current status: " + reservation.getStatus());
+                    messageSource.getMessage("services.reservation.notApproved", 
+                            new Object[]{reservation.getStatus()}, LocaleContextHolder.getLocale()));
         }
 
         if (request.getStatus() != ReservationStatus.FINISHED_SUCCESSFUL &&
                 request.getStatus() != ReservationStatus.CLIENT_DIDNT_CAME) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_FINAL_STATUS",
-                    "Final status must be FINISHED_SUCCESSFUL or CLIENT_DIDNT_CAME");
+                    messageSource.getMessage("services.reservation.invalidFinalStatus", null, LocaleContextHolder.getLocale()));
         }
 
         reservation.setStatus(request.getStatus());
@@ -242,20 +255,21 @@ public class ReservationServiceImpl implements ReservationService {
         Reservation reservation = reservationRepository.findByIdAndIsDeletedFalse(reservationId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "RESERVATION_NOT_FOUND",
-                        "Reservation not found with ID: " + reservationId));
+                        messageSource.getMessage("services.reservation.notFound", 
+                                new Object[]{reservationId}, LocaleContextHolder.getLocale())));
 
         if (!reservation.getApprovedBy().getKeycloakId().equals(clientId)) {
             throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
                     "ACCESS_DENIED",
-                    "You can only cancel your own reservations");
+                    messageSource.getMessage("services.reservation.accessDenied", null, LocaleContextHolder.getLocale()));
         }
 
         if (reservation.getStatus() != ReservationStatus.WAITING_TO_APPROVE &&
                 reservation.getStatus() != ReservationStatus.APPROVED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_STATUS_FOR_CANCELLATION",
-                    "Can only cancel reservations with status WAITING_TO_APPROVE or APPROVED. Current status: " +
-                            reservation.getStatus());
+                    messageSource.getMessage("services.reservation.invalidStatusForCancellation", 
+                            new Object[]{reservation.getStatus()}, LocaleContextHolder.getLocale()));
         }
 
         AccSearchRequest searchRequest = reservation.getSearchRequest();
@@ -266,8 +280,8 @@ public class ReservationServiceImpl implements ReservationService {
         if (now.isAfter(oneDayBeforeCheckIn)) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "TOO_LATE_TO_CANCEL",
-                    "Reservations can only be cancelled at least 1 day before check-in date. Check-in: " +
-                            checkInDate + ", Current time: " + now);
+                    messageSource.getMessage("services.reservation.tooLateToCancel", 
+                            new Object[]{checkInDate, now}, LocaleContextHolder.getLocale()));
         }
 
         reservation.setStatus(ReservationStatus.CANCELED);

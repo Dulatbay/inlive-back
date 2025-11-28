@@ -21,6 +21,8 @@ import ai.lab.inlive.repositories.ReservationRepository;
 import ai.lab.inlive.services.PriceRequestService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -37,6 +39,7 @@ public class PriceRequestServiceImpl implements PriceRequestService {
     private final AccommodationUnitRepository accommodationUnitRepository;
     private final PriceRequestMapper priceRequestMapper;
     private final ReservationRepository reservationRepository;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -48,19 +51,21 @@ public class PriceRequestServiceImpl implements PriceRequestService {
                 .findByIdAndIsDeletedFalse(request.getSearchRequestId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
-                        "Search request not found with ID: " + request.getSearchRequestId()));
+                        messageSource.getMessage("services.priceRequest.searchRequestNotFound", 
+                                new Object[]{request.getSearchRequestId()}, LocaleContextHolder.getLocale())));
 
         AccommodationUnit unit = accommodationUnitRepository
                 .findByIdAndIsDeletedFalse(request.getAccommodationUnitId())
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_UNIT_NOT_FOUND",
-                        "Accommodation Unit not found with ID: " + request.getAccommodationUnitId()));
+                        messageSource.getMessage("services.priceRequest.accommodationUnitNotFound", 
+                                new Object[]{request.getAccommodationUnitId()}, LocaleContextHolder.getLocale())));
 
         if (priceRequestRepository.existsBySearchRequestIdAndUnitId(
                 request.getSearchRequestId(), request.getAccommodationUnitId())) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "PRICE_REQUEST_ALREADY_EXISTS",
-                    "Price request already exists for this search request and unit");
+                    messageSource.getMessage("services.priceRequest.alreadyExists", null, LocaleContextHolder.getLocale()));
         }
 
         PriceRequest priceRequest = priceRequestMapper.toEntity(request);
@@ -85,7 +90,8 @@ public class PriceRequestServiceImpl implements PriceRequestService {
         PriceRequest priceRequest = priceRequestRepository.findByIdAndIsDeletedFalse(priceRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "PRICE_REQUEST_NOT_FOUND",
-                        "Price request not found with ID: " + priceRequestId));
+                        messageSource.getMessage("services.priceRequest.notFound", 
+                                new Object[]{priceRequestId}, LocaleContextHolder.getLocale())));
 
         priceRequest.setStatus(request.getStatus());
         priceRequest.setPrice(request.getPrice());
@@ -104,7 +110,8 @@ public class PriceRequestServiceImpl implements PriceRequestService {
         PriceRequest priceRequest = priceRequestRepository.findByIdAndIsDeletedFalse(priceRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "PRICE_REQUEST_NOT_FOUND",
-                        "Price request not found with ID: " + priceRequestId));
+                        messageSource.getMessage("services.priceRequest.notFound", 
+                                new Object[]{priceRequestId}, LocaleContextHolder.getLocale())));
 
         priceRequest.softDelete();
         priceRequestRepository.save(priceRequest);
@@ -133,7 +140,8 @@ public class PriceRequestServiceImpl implements PriceRequestService {
         accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "ACCOMMODATION_UNIT_NOT_FOUND",
-                        "Accommodation Unit not found with ID: " + unitId));
+                        messageSource.getMessage("services.priceRequest.accommodationUnitNotFound", 
+                                new Object[]{unitId}, LocaleContextHolder.getLocale())));
 
         Page<PriceRequest> priceRequests = priceRequestRepository.findActiveByUnitId(unitId, pageable);
         return priceRequests.map(priceRequestMapper::toDto);
@@ -147,7 +155,8 @@ public class PriceRequestServiceImpl implements PriceRequestService {
         accSearchRequestRepository.findByIdAndIsDeletedFalse(searchRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
-                        "Search request not found with ID: " + searchRequestId));
+                        messageSource.getMessage("services.priceRequest.searchRequestNotFound", 
+                                new Object[]{searchRequestId}, LocaleContextHolder.getLocale())));
 
         Page<PriceRequest> priceRequests = priceRequestRepository
                 .findActiveBySearchRequestId(searchRequestId, pageable);
@@ -163,27 +172,28 @@ public class PriceRequestServiceImpl implements PriceRequestService {
         PriceRequest priceRequest = priceRequestRepository.findByIdAndIsDeletedFalse(priceRequestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "PRICE_REQUEST_NOT_FOUND",
-                        "Price request not found with ID: " + priceRequestId));
+                        messageSource.getMessage("services.priceRequest.notFound", 
+                                new Object[]{priceRequestId}, LocaleContextHolder.getLocale())));
 
         AccSearchRequest searchRequest = priceRequest.getSearchRequest();
         if (!searchRequest.getAuthor().getKeycloakId().equals(clientId)) {
             throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
                     "ACCESS_DENIED",
-                    "You can only respond to price requests for your own search requests");
+                    messageSource.getMessage("services.priceRequest.accessDenied", null, LocaleContextHolder.getLocale()));
         }
 
         if (priceRequest.getClientResponseStatus() != ClientResponseStatus.WAITING) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "ALREADY_RESPONDED",
-                    "You have already responded to this price request with status: " +
-                            priceRequest.getClientResponseStatus());
+                    messageSource.getMessage("services.priceRequest.alreadyResponded", 
+                            new Object[]{priceRequest.getClientResponseStatus()}, LocaleContextHolder.getLocale()));
         }
 
         if (request.getClientResponseStatus() != ClientResponseStatus.ACCEPTED &&
                 request.getClientResponseStatus() != ClientResponseStatus.REJECTED) {
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "INVALID_RESPONSE_STATUS",
-                    "Client response status must be either ACCEPTED or REJECTED");
+                    messageSource.getMessage("services.priceRequest.invalidResponseStatus", null, LocaleContextHolder.getLocale()));
         }
 
         priceRequest.setClientResponseStatus(request.getClientResponseStatus());
