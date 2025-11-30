@@ -14,5 +14,8 @@ public class DistrictResponse {
 
     @Schema(description = "ID города", example = "1")
     private Long cityId;
+
+    @Schema(description = "Средняя цена за жилье в районе (в тенге)", example = "25000.0")
+    private Double averagePrice;
 }
 
