@@ -230,7 +230,7 @@ public class KeycloakServiceImpl implements KeycloakService {
                 Cookie roleCookie = buildRoleCookie(role);
                 response1.addCookie(roleCookie);
 
-                return buildAuthResponseDto(accessToken, Long.valueOf(expiresIn), tokenType);
+                return buildAuthResponseDto(accessToken, refreshToken, Long.valueOf(expiresIn), tokenType);
             } else {
                 throw new RuntimeException("Failed to get auth response: " + response.getStatusCode());
             }
@@ -394,6 +394,7 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             return AuthResponse.builder()
                     .accessToken(token.getToken())
+                    .refreshToken(token.getRefreshToken())
                     .expiresIn(token.getExpiresIn())
                     .tokenType(token.getTokenType())
                     .build();
@@ -439,6 +440,7 @@ public class KeycloakServiceImpl implements KeycloakService {
 
                 return AuthResponse.builder()
                         .accessToken(body.accessToken())
+                        .refreshToken(body.refreshToken())
                         .expiresIn(body.expiresIn())
                         .tokenType(body.tokenType())
                         .build();
@@ -534,9 +536,10 @@ public class KeycloakServiceImpl implements KeycloakService {
                 .orElseThrow(() -> new IllegalArgumentException("Refresh token is missing"));
     }
 
-    private AuthResponse buildAuthResponseDto(String accessToken, Long expiresIn, String tokenType) {
+    private AuthResponse buildAuthResponseDto(String accessToken, String refreshToken, Long expiresIn, String tokenType) {
         return AuthResponse.builder()
                 .accessToken(accessToken)
+                .refreshToken(refreshToken)
                 .expiresIn(expiresIn)
                 .tokenType(tokenType)
                 .build();
