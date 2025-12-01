@@ -13,4 +13,5 @@ public class ValueConstants {
     public static final String FILE_MANAGER_ACCOMMODATION_IMAGE_DIR = "accommodation-images";
 //    public static final String FILE_MANAGER_ACCOMMODATION_DOCUMENT_DIR = "accommodation-documents";
     public static final String FILE_MANAGER_ACCOMMODATION_UNIT_IMAGE_DIR = "accommodation-unit-images";
+    public static final String FILE_MANAGER_USER_PHOTOS_DIR = "user-photos";
 }

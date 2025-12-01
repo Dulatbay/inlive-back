@@ -1,15 +1,19 @@
 package ai.lab.inlive.services.impl;
 
+import ai.lab.inlive.dto.request.UpdateUserProfileRequest;
 import ai.lab.inlive.dto.response.UserResponse;
 import ai.lab.inlive.entities.User;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
+import ai.lab.inlive.mappers.ImageMapper;
 import ai.lab.inlive.mappers.UserMapper;
 import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;
 import ai.lab.inlive.services.UserService;
+import ai.lab.inlivefilemanager.client.api.FileManagerApi;
 import jakarta.persistence.EntityManager;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Value;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,10 +22,14 @@ import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static ai.lab.inlive.constants.ValueConstants.FILE_MANAGER_USER_PHOTOS_DIR;
 
 @Slf4j
 @Service
@@ -32,6 +40,8 @@ public class UserServiceImpl implements UserService {
     private final EntityManager entityManager;
     private final MessageSource messageSource;
     private final UserMapper userMapper;
+    private final ImageMapper imageMapper;
+    private final FileManagerApi fileManagerApi;
 
     @Value("${spring.application.username}")
     private String keycloakUsername;
@@ -143,6 +153,98 @@ public class UserServiceImpl implements UserService {
                         "User not found with Keycloak ID: " + keycloakId));
 
         log.info("Successfully fetched user info: {} {}", user.getFirstName(), user.getLastName());
-        return userMapper.toDto(user);
+        return userMapper.toDto(user, imageMapper);
+    }
+
+    @Override
+    @Transactional
+    public void updateUserProfile(String keycloakId, UpdateUserProfileRequest request) {
+        log.info("Updating user profile for keycloakId: {}", keycloakId);
+
+        User user = userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "User not found with Keycloak ID: " + keycloakId));
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setEmail(request.getEmail());
+        
+        userRepository.save(user);
+
+        try {
+            var userResource = keycloakService.getUserById(keycloakId);
+            UserRepresentation keycloakUser = userResource.toRepresentation();
+            keycloakUser.setFirstName(request.getFirstName());
+            keycloakUser.setLastName(request.getLastName());
+            keycloakUser.setEmail(request.getEmail());
+            userResource.update(keycloakUser);
+            
+            log.info("Successfully updated user profile: {} {}", user.getFirstName(), user.getLastName());
+        } catch (Exception e) {
+            log.error("Failed to update user in Keycloak: {}", e.getMessage(), e);
+            throw new IllegalArgumentException("Failed to update user in Keycloak: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateUserPhoto(String keycloakId, MultipartFile photo) {
+        log.info("Updating profile photo for user with ID: {}", keycloakId);
+
+        var user = userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new DbObjectNotFoundException(
+                        HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "User not found with ID: " + keycloakId
+                ));
+
+        if (photo != null && !photo.isEmpty()) {
+            List<String> uploadedUrls = Objects.requireNonNull(
+                    fileManagerApi
+                            .uploadFiles(FILE_MANAGER_USER_PHOTOS_DIR, List.of(photo), true)
+                            .getBody()
+            );
+
+            if (!uploadedUrls.isEmpty()) {
+                user.setPhotoUrl(uploadedUrls.getFirst());
+            }
+        }
+
+        userRepository.save(user);
+
+        log.info("Successfully updated profile photo for user with ID: {}", keycloakId);
+    }
+
+
+    @Override
+    @Transactional
+    public void deleteUserPhoto(String keycloakId) {
+        log.info("Deleting photo for user with keycloakId: {}", keycloakId);
+
+        var user = userRepository.findByKeycloakId(keycloakId)
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
+                        "USER_NOT_FOUND",
+                        "User not found with Keycloak ID: " + keycloakId));
+
+        if (user.getPhotoUrl() == null || user.getPhotoUrl().isEmpty()) {
+            throw new IllegalArgumentException("User has no photo to delete");
+        }
+
+        deletePhotoFile(user.getPhotoUrl());
+
+        user.setPhotoUrl(null);
+        userRepository.save(user);
+
+        log.info("Successfully deleted photo for user: {}", keycloakId);
+    }
+
+    private void deletePhotoFile(String filename) {
+        try {
+            fileManagerApi.deleteFile(FILE_MANAGER_USER_PHOTOS_DIR, filename);
+            log.info("Deleted photo file from file-api: {}", filename);
+        } catch (Exception e) {
+            log.warn("Failed to delete photo file from file-api: {}", e.getMessage());
+        }
     }
 }
