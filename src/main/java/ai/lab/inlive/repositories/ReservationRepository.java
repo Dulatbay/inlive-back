@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -42,6 +43,16 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 //    Optional<Reservation> findByPriceRequestIdAndIsDeletedFalse(Long priceRequestId);
 
     boolean existsByPriceRequestId(Long priceRequestId);
+
+    @Query("SELECT COUNT(r) > 0 FROM Reservation r " +
+            "WHERE r.unit.id = :unitId " +
+            "AND r.isDeleted = false " +
+            "AND r.status IN ('WAITING_TO_APPROVE', 'ACCEPTED') " +
+            "AND r.searchRequest.fromDate < :checkOutDate " +
+            "AND r.searchRequest.toDate > :checkInDate")
+    boolean isUnitReservedForPeriod(@Param("unitId") Long unitId,
+                                   @Param("checkInDate") LocalDateTime checkInDate,
+                                   @Param("checkOutDate") LocalDateTime checkOutDate);
 
     @Query("SELECT r FROM Reservation r " +
             "WHERE r.approvedBy.keycloakId = :clientId " +
