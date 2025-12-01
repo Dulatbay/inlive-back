@@ -43,7 +43,7 @@ public class UserServiceImpl implements UserService {
     public User getUserByKeycloakId(String keycloakId) {
         log.info("Retrieving user with keycloakId: {}", keycloakId);
         return userRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), messageSource.getMessage("services-impl.user-service-impl.wonder-user-does-not-exist", null, LocaleContextHolder.getLocale())));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), messageSource.getMessage("error.user.notFound", null, LocaleContextHolder.getLocale())));
 
     }
 
