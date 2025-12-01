@@ -9,6 +9,12 @@ import io.swagger.v3.oas.annotations.info.License;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.servers.Server;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import org.springdoc.core.customizers.GlobalOpenApiCustomizer;
+import org.springframework.context.annotation.Bean;
+
+import java.util.List;
 
 @OpenAPIDefinition(
         info = @Info(
@@ -51,4 +57,17 @@ import io.swagger.v3.oas.annotations.servers.Server;
         in = SecuritySchemeIn.HEADER
 )
 public class OpenApiConfig {
+    @Bean
+    public GlobalOpenApiCustomizer customGlobalHeader() {
+        return openApi -> openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(operation -> {
+            Parameter acceptLanguageHeader = new Parameter()
+                    .in("header")
+                    .name("Accept-Language")
+                    .description("Supported locales: kk, ru, en")
+                    .schema(new StringSchema()._enum(List.of("kk", "ru", "en"))._default("ru"))
+                    .required(false);
+
+            operation.addParametersItem(acceptLanguageHeader);
+        }));
+    }
 }
