@@ -3,6 +3,7 @@ package ai.lab.inlive.security;
 import com.nimbusds.jose.shaded.gson.internal.LinkedTreeMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -40,6 +41,7 @@ public class SecurityConfig {
     };
     @Value("${spring.application.client-id}")
     private String clientId;
+    private final MessageSource messageSource;
 
     @Bean
     public SecurityFilterChain configure(HttpSecurity http) throws Exception {
@@ -54,7 +56,7 @@ public class SecurityConfig {
         http
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http.exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer.accessDeniedHandler(new CustomAccessDeniedHandler())
+        http.exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer.accessDeniedHandler(new CustomAccessDeniedHandler(messageSource))
         );
 
         http.addFilterBefore(new CustomCorsFilter(), ChannelProcessingFilter.class);

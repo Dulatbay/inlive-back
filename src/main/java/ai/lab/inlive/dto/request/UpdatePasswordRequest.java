@@ -9,12 +9,12 @@ import lombok.Data;
 public class UpdatePasswordRequest {
     @JsonIgnore
     private String email;
-
-    @NotBlank(message = "Old password is required")
-    @Size(min = 8, max = 255, message = "Old password must be between 8 and 255 characters")
+  
+    @NotBlank(message = "{validation.oldPassword.required}")
+    @Size(min = 8, max = 255, message = "{validation.oldPassword.size}")
     private String oldPassword;
 
-    @NotBlank(message = "New password is required")
-    @Size(min = 8, max = 255, message = "New password must be between 8 and 255 characters")
+    @NotBlank(message = "{validation.newPassword.required}")
+    @Size(min = 8, max = 255, message = "{validation.newPassword.size}")
     private String newPassword;
 }

@@ -5,13 +5,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record UserAuthRequest(
-        @NotBlank(message = "Email is required")
-        @Email(message = "Email must be a valid email address")
-        @Size(max = 255, message = "Email must not exceed 255 characters")
+        @NotBlank(message = "{validation.auth.email.required}")
+        @Email(message = "{validation.auth.email.invalid}")
+        @Size(max = 255, message = "{validation.auth.email.size}")
         String email,
 
-        @NotBlank(message = "Password is required")
-        @Size(min = 8, max = 255, message = "Password must be between 8 and 255 characters")
+        @NotBlank(message = "{validation.auth.password.required}")
+        @Size(min = 8, max = 255, message = "{validation.auth.password.size}")
         String password
 ) {
 }
