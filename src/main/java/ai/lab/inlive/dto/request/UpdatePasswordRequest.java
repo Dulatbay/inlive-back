@@ -9,7 +9,7 @@ import lombok.Data;
 public class UpdatePasswordRequest {
     @JsonIgnore
     private String email;
-  
+
     @NotBlank(message = "{validation.oldPassword.required}")
     @Size(min = 8, max = 255, message = "{validation.oldPassword.size}")
     private String oldPassword;
