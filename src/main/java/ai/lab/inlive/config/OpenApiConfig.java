@@ -13,6 +13,7 @@ import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.parameters.Parameter;
 import org.springdoc.core.customizers.GlobalOpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -56,7 +57,9 @@ import java.util.List;
         bearerFormat = "JWT",
         in = SecuritySchemeIn.HEADER
 )
+@Component
 public class OpenApiConfig {
+
     @Bean
     public GlobalOpenApiCustomizer customGlobalHeader() {
         return openApi -> openApi.getPaths().values().forEach(pathItem -> pathItem.readOperations().forEach(operation -> {
