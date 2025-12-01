@@ -8,7 +8,7 @@ import lombok.Data;
 @Data
 @Schema(description = "Запрос на обновление финального статуса бронирования после прихода/неприхода клиента")
 public class ReservationFinalStatusUpdateRequest {
-    @NotNull(message = "Status is required")
+    @NotNull(message = "{validation.reservation.status.required}")
     @Schema(description = "Финальный статус бронирования (FINISHED_SUCCESSFUL - клиент пришел, CLIENT_DIDNT_CAME - клиент не пришел)",
             example = "FINISHED_SUCCESSFUL",
             allowableValues = {"FINISHED_SUCCESSFUL", "CLIENT_DIDNT_CAME"})

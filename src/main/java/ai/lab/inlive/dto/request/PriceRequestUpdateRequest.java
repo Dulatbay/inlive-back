@@ -9,12 +9,12 @@ import lombok.Data;
 @Data
 @Schema(description = "Запрос на обновление заявки цены (для SUPER_MANAGER)")
 public class PriceRequestUpdateRequest {
-    @NotNull(message = "Status is required")
+    @NotNull(message = "{validation.priceRequest.status.required}")
     @Schema(description = "Новый статус заявки (ACCEPTED, RAISED, DECREASED)", example = "ACCEPTED")
     private PriceRequestStatus status;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", message = "Price must be non-negative")
+    @NotNull(message = "{validation.priceRequest.price.required}")
+    @DecimalMin(value = "0.0", message = "{validation.priceRequest.price.decimalMin}")
     @Schema(description = "Новая цена (может быть изменена при RAISED или DECREASED)", example = "55000.0")
     private Double price;
 }

@@ -8,10 +8,10 @@ import lombok.Data;
 
 @Data
 public class DictionaryCreateRequest {
-    @NotNull(message = "Dictionary key is required")
+    @NotNull(message = "{validation.dictionary.key.required}")
     private DictionaryKey key;
 
-    @NotBlank(message = "Dictionary value is required")
-    @Size(max = 255, message = "Dictionary value must not exceed 255 characters")
+    @NotBlank(message = "{validation.dictionary.value.required}")
+    @Size(max = 255, message = "{validation.dictionary.value.size}")
     private String value;
 }

@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 @Schema(description = "Запрос на создание бронирования (создается автоматически после подтверждения клиентом)")
 public class ReservationCreateRequest {
-    @NotNull(message = "Price request ID is required")
+    @NotNull(message = "{validation.reservation.priceRequestId.required}")
     @Schema(description = "ID заявки на цену", example = "1")
     private Long priceRequestId;
 }
