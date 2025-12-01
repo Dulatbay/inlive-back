@@ -1,7 +1,8 @@
 package ai.lab.inlive.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -9,9 +10,11 @@ public class UpdatePasswordRequest {
     @JsonIgnore
     private String email;
 
-    @NotNull(message = "Пожалуйста, укажите старый пароль")
+    @NotBlank(message = "{validation.oldPassword.required}")
+    @Size(min = 8, max = 255, message = "{validation.oldPassword.size}")
     private String oldPassword;
 
-    @NotNull(message = "Пожалуйста, укажите новый пароль")
+    @NotBlank(message = "{validation.newPassword.required}")
+    @Size(min = 8, max = 255, message = "{validation.newPassword.size}")
     private String newPassword;
 }

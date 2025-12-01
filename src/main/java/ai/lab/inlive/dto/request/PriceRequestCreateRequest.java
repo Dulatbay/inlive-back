@@ -8,16 +8,16 @@ import lombok.Data;
 @Data
 @Schema(description = "Запрос на создание заявки цены")
 public class PriceRequestCreateRequest {
-    @NotNull(message = "Search request ID is required")
+    @NotNull(message = "{validation.priceRequest.searchRequestId.required}")
     @Schema(description = "ID заявки на поиск жилья", example = "1")
     private Long searchRequestId;
 
-    @NotNull(message = "Accommodation unit ID is required")
+    @NotNull(message = "{validation.priceRequest.accommodationUnitId.required}")
     @Schema(description = "ID единицы размещения", example = "1")
     private Long accommodationUnitId;
 
-    @NotNull(message = "Price is required")
-    @DecimalMin(value = "0.0", message = "Price must be non-negative")
+    @NotNull(message = "{validation.priceRequest.price.required}")
+    @DecimalMin(value = "0.0", message = "{validation.priceRequest.price.decimalMin}")
     @Schema(description = "Предлагаемая цена", example = "50000.0")
     private Double price;
 }

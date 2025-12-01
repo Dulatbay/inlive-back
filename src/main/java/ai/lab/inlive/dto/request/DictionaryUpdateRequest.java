@@ -7,9 +7,9 @@ import lombok.Data;
 
 @Data
 public class DictionaryUpdateRequest {
-    @NotNull(message = "Dictionary key is required")
+    @NotNull(message = "{validation.dictionary.key.required}")
     private DictionaryKey key;
 
-    @Size(max = 255, message = "Dictionary value must not exceed 255 characters")
+    @Size(max = 255, message = "{validation.dictionary.value.size}")
     private String value;
 }

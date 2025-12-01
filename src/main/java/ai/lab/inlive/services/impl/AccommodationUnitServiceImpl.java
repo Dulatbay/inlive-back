@@ -22,6 +22,8 @@ import ai.lab.inlive.services.AccommodationUnitService;
 import ai.lab.inlivefilemanager.client.api.FileManagerApi;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -55,6 +57,7 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
     private final PriceRequestMapper priceRequestMapper;
     private final ReservationMapper reservationMapper;
     private final FileManagerApi fileManagerApi;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -65,7 +68,9 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
         var unitDictionaries = new HashSet<AccUnitDictionary>();
 
         var accommodation = accommodationRepository.findByIdAndIsDeletedFalse(request.getAccommodationId())
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", "Accommodation not found with ID: " + request.getAccommodationId()));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodationUnit.accommodationNotFound", 
+                                new Object[]{request.getAccommodationId()}, LocaleContextHolder.getLocale())));
 
         var unit = unitMapper.toEntity(request);
         unit.setAccommodation(accommodation);
@@ -74,9 +79,13 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             request.getServiceDictionaryIds()
                     .forEach(serviceDictionaryId -> {
                         var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(serviceDictionaryId)
-                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + serviceDictionaryId));
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                                        messageSource.getMessage("services.accommodationUnit.dictionaryNotFound", 
+                                                new Object[]{serviceDictionaryId}, LocaleContextHolder.getLocale())));
                         if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
-                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + serviceDictionaryId + " must have key ACC_SERVICE");
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", 
+                                    messageSource.getMessage("services.accommodationUnit.invalidDictionaryKey", 
+                                            new Object[]{serviceDictionaryId, "ACC_SERVICE"}, LocaleContextHolder.getLocale()));
                         }
                         unitDictionaries.add(unitMapper.toDictionaryLink(accommodation, unit, dictionary));
                     });
@@ -86,9 +95,13 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             request.getConditionDictionaryIds()
                     .forEach(conditionDictionaryId -> {
                         var dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(conditionDictionaryId)
-                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + conditionDictionaryId));
+                                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                                        messageSource.getMessage("services.accommodationUnit.dictionaryNotFound", 
+                                                new Object[]{conditionDictionaryId}, LocaleContextHolder.getLocale())));
                         if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
-                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + conditionDictionaryId + " must have key ACC_CONDITION");
+                            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", 
+                                    messageSource.getMessage("services.accommodationUnit.invalidDictionaryKey", 
+                                            new Object[]{conditionDictionaryId, "ACC_CONDITION"}, LocaleContextHolder.getLocale()));
                         }
                         unitDictionaries.add(unitMapper.toDictionaryLink(accommodation, unit, dictionary));
                     });
@@ -118,13 +131,19 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
     public void addTariff(Long unitId, AccUnitTariffCreateRequest request) {
         log.info("Adding tariff for unit: {}", unitId);
         AccommodationUnit unit = accommodationUnitRepository.findByIdAndIsDeletedFalse(unitId)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", "Accommodation Unit not found with ID: " + unitId));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_UNIT_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodationUnit.notFound", 
+                                new Object[]{unitId}, LocaleContextHolder.getLocale())));
 
         Dictionary rangeType = dictionaryRepository.findByIdAndIsDeletedFalse(request.getRangeTypeId())
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + request.getRangeTypeId()));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                        messageSource.getMessage("services.accommodationUnit.dictionaryNotFound", 
+                                new Object[]{request.getRangeTypeId()}, LocaleContextHolder.getLocale())));
 
         if (rangeType.getKey() != DictionaryKey.RANGE_TYPE) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", "Dictionary ID " + request.getRangeTypeId() + " must have key RANGE_TYPE");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY", 
+                    messageSource.getMessage("services.accommodationUnit.invalidDictionaryKey", 
+                            new Object[]{request.getRangeTypeId(), "RANGE_TYPE"}, LocaleContextHolder.getLocale()));
         }
 
         AccUnitTariffs tariff = unitMapper.toEntity(request);
@@ -212,11 +231,13 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             for (Long dictionaryId : request.getServiceDictionaryIds()) {
                 Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
                         .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
-                                "Dictionary not found with ID: " + dictionaryId));
+                                messageSource.getMessage("services.accommodationUnit.dictionaryNotFound", 
+                                        new Object[]{dictionaryId}, LocaleContextHolder.getLocale())));
 
                 if (dictionary.getKey() != DictionaryKey.ACC_SERVICE) {
                     throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY",
-                            "Dictionary ID " + dictionaryId + " must have key ACC_SERVICE");
+                            messageSource.getMessage("services.accommodationUnit.invalidDictionaryKey", 
+                                    new Object[]{dictionaryId, "ACC_SERVICE"}, LocaleContextHolder.getLocale()));
                 }
 
                 AccUnitDictionary link = unitMapper.toDictionaryLink(unit.getAccommodation(), unit, dictionary);
@@ -233,11 +254,13 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
             for (Long dictionaryId : request.getConditionDictionaryIds()) {
                 Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(dictionaryId)
                         .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND",
-                                "Dictionary not found with ID: " + dictionaryId));
+                                messageSource.getMessage("services.accommodationUnit.dictionaryNotFound", 
+                                        new Object[]{dictionaryId}, LocaleContextHolder.getLocale())));
 
                 if (dictionary.getKey() != DictionaryKey.ACC_CONDITION) {
                     throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_DICTIONARY_KEY",
-                            "Dictionary ID " + dictionaryId + " must have key ACC_CONDITION");
+                            messageSource.getMessage("services.accommodationUnit.invalidDictionaryKey", 
+                                    new Object[]{dictionaryId, "ACC_CONDITION"}, LocaleContextHolder.getLocale()));
                 }
 
                 AccUnitDictionary link = unitMapper.toDictionaryLink(unit.getAccommodation(), unit, dictionary);
@@ -287,7 +310,8 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
         if (photoUrls == null || photoUrls.isEmpty()) {
             log.warn("No photo URLs provided for deletion");
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Photo URLs list cannot be empty");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", 
+                    messageSource.getMessage("services.accommodationUnit.photoUrlsEmpty", null, LocaleContextHolder.getLocale()));
         }
 
         List<String> urlsToDelete = photoUrls.stream()
@@ -298,7 +322,8 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
         if (urlsToDelete.isEmpty()) {
             log.warn("No valid photo URLs provided for deletion");
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "No valid photo URLs provided");
+            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", 
+                    messageSource.getMessage("services.accommodationUnit.noValidPhotoUrls", null, LocaleContextHolder.getLocale()));
         }
 
         int deletedCount = 0;
@@ -312,7 +337,7 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
         if (imagesToRemove.isEmpty()) {
             log.warn("No matching photos found for deletion");
             throw new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "PHOTOS_NOT_FOUND",
-                    "No photos found matching the provided URLs");
+                    messageSource.getMessage("services.accommodationUnit.photosNotFound", null, LocaleContextHolder.getLocale()));
         }
 
         for (AccUnitImages image : imagesToRemove) {
@@ -334,7 +359,7 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
                     deletedCount, id, failedCount);
         } else {
             throw new DbObjectNotFoundException(HttpStatus.INTERNAL_SERVER_ERROR, "DELETE_FAILED",
-                    "Failed to delete any photos from storage");
+                    messageSource.getMessage("services.accommodationUnit.deleteFailed", null, LocaleContextHolder.getLocale()));
         }
     }
 
@@ -397,11 +422,13 @@ public class AccommodationUnitServiceImpl implements AccommodationUnitService {
 
         accommodationRepository.findByIdAndIsDeletedFalse(accommodationId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "ACCOMMODATION_NOT_FOUND",
-                        "Accommodation not found with ID: " + accommodationId));
+                        messageSource.getMessage("services.accommodationUnit.accommodationNotFound", 
+                                new Object[]{accommodationId}, LocaleContextHolder.getLocale())));
 
         AccSearchRequest searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(requestId)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "SEARCH_REQUEST_NOT_FOUND",
-                        "Search request not found with ID: " + requestId));
+                        messageSource.getMessage("services.accommodationUnit.searchRequestNotFound", 
+                                new Object[]{requestId}, LocaleContextHolder.getLocale())));
 
         List<AccommodationUnit> allUnits = accommodationUnitRepository.findByAccommodationIdAndIsDeletedFalse(accommodationId);
 

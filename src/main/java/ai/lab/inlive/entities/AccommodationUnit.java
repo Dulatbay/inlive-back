@@ -4,7 +4,6 @@ import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 

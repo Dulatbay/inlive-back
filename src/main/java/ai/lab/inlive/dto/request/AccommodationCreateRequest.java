@@ -10,24 +10,24 @@ import java.util.List;
 
 @Data
 public class AccommodationCreateRequest {
-    @NotNull(message = "City ID is required")
+    @NotNull(message = "{validation.accommodation.cityId.required}")
     private Long cityId;
 
-    @NotNull(message = "District ID is required")
+    @NotNull(message = "{validation.accommodation.districtId.required}")
     private Long districtId;
 
-    @NotBlank(message = "Address is required")
-    @Size(max = 255, message = "Address must not exceed 255 characters")
+    @NotBlank(message = "{validation.accommodation.address.required}")
+    @Size(max = 255, message = "{validation.accommodation.address.size}")
     private String address;
 
-    @NotBlank(message = "Name is required")
-    @Size(max = 255, message = "Name must not exceed 255 characters")
+    @NotBlank(message = "{validation.accommodation.name.required}")
+    @Size(max = 255, message = "{validation.accommodation.name.size}")
     private String name;
 
-    @Size(max = 5000, message = "Description must not exceed 5000 characters")
+    @Size(max = 5000, message = "{validation.accommodation.description.size}")
     private String description;
 
-    @NotNull(message = "Rating is required")
+    @NotNull(message = "{validation.accommodation.rating.required}")
     private Double rating;
 
     private List<Long> serviceDictionaryIds;
