@@ -12,6 +12,8 @@ import ai.lab.inlive.services.DictionaryService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ public class DictionaryServiceImpl implements DictionaryService {
 
     private final DictionaryRepository dictionaryRepository;
     private final DictionaryMapper mapper;
+    private final MessageSource messageSource;
 
     @Override
     @Transactional
@@ -42,7 +45,8 @@ public class DictionaryServiceImpl implements DictionaryService {
     public DictionaryResponse getDictionaryById(Long id) {
         log.info("Fetching dictionary by ID: {}", id);
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                        messageSource.getMessage("services.dictionary.notFound", new Object[]{id}, LocaleContextHolder.getLocale())));
         return mapper.toDto(dictionary);
     }
 
@@ -61,12 +65,14 @@ public class DictionaryServiceImpl implements DictionaryService {
         log.info("Updating dictionary with ID: {}", id);
 
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                        messageSource.getMessage("services.dictionary.notFound", new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (request.getKey() != null) {
             if (dictionaryRepository.existsByKeyAndIsDeletedFalse(request.getKey())
                     && (!dictionary.getKey().equals(request.getKey()))) {
-                throw new RuntimeException("Dictionary with key '" + request.getKey() + "' already exists");
+                throw new RuntimeException(messageSource.getMessage("services.dictionary.alreadyExists", 
+                        new Object[]{request.getKey()}, LocaleContextHolder.getLocale()));
             }
         }
 
@@ -88,7 +94,8 @@ public class DictionaryServiceImpl implements DictionaryService {
         log.info("Deleting dictionary with ID: {}", id);
 
         Dictionary dictionary = dictionaryRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", "Dictionary not found with ID: " + id));
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "DICTIONARY_NOT_FOUND", 
+                        messageSource.getMessage("services.dictionary.notFound", new Object[]{id}, LocaleContextHolder.getLocale())));
 
         dictionary.softDelete();
 
