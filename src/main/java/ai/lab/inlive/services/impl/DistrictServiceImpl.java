@@ -24,7 +24,7 @@ public class DistrictServiceImpl implements DistrictService {
         log.info("Fetching all districts");
         List<District> districts = districtRepository.findAllByIsDeletedFalse();
         return districts.stream()
-                .map(mapper::toDto)
+                .map(this::mapToResponseWithAvgPrice)
                 .collect(Collectors.toList());
     }
 
@@ -33,7 +33,12 @@ public class DistrictServiceImpl implements DistrictService {
         log.info("Fetching districts for city ID: {}", cityId);
         List<District> districts = districtRepository.findByCityIdAndIsDeletedFalse(cityId);
         return districts.stream()
-                .map(mapper::toDto)
+                .map(this::mapToResponseWithAvgPrice)
                 .collect(Collectors.toList());
+    }
+
+    private DistrictResponse mapToResponseWithAvgPrice(District district) {
+        Double avgPrice = districtRepository.calculateAveragePriceByDistrictId(district.getId());
+        return mapper.toDtoWithAvgPrice(district, avgPrice);
     }
 }
