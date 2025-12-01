@@ -20,4 +20,16 @@ public interface DistrictRepository extends JpaRepository<District, Long> {
                 AND d.is_deleted = false
             """, nativeQuery = true)
     List<District> findByCityIdAndIsDeletedFalse(@Param(value = "cityId") Long cityId);
+
+    @Query(value = """
+                SELECT AVG(t.price)
+                FROM acc_unit_tariffs t
+                JOIN accommodation_units u ON t.accommodation_unit_id = u.id
+                JOIN accommodations a ON u.acc_id = a.id
+                WHERE a.district_id = :districtId
+                AND a.is_deleted = false
+                AND u.is_deleted = false
+                AND t.is_deleted = false
+            """, nativeQuery = true)
+    Double calculateAveragePriceByDistrictId(@Param("districtId") Long districtId);
 }
