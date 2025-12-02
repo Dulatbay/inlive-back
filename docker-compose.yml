@@ -8,8 +8,8 @@ services:
       - app-platform
     restart: unless-stopped
     environment:
-      - API_URL=${API_URL}
-      - BUCKET_URL=${BUCKET_URL}
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=${API_URL}
     ports:
       - "3000:3000"
   dozzle:
