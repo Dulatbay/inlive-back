@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -37,6 +38,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
     private final DistrictRepository districtRepository;
     private final DictionaryRepository dictionaryRepository;
     private final AccommodationUnitRepository accommodationUnitRepository;
+    private final ReservationRepository reservationRepository;
     private final AccSearchRequestMapper searchRequestMapper;
     private final MessageSource messageSource;
 
@@ -117,13 +119,13 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             }
         }
 
-        boolean hasMatchingUnits = checkAvailableUnits(request, districts, services, conditions);
+        String failureReason = checkAvailableUnits(request, districts, services, conditions, checkInDateTime, checkOutDateTime);
 
-        if (!hasMatchingUnits) {
-            log.warn("No matching accommodation units found for search request");
+        if (failureReason != null) {
+            log.warn("No matching accommodation units found: {}", failureReason);
             throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
                     "NO_MATCHING_UNITS",
-                    messageSource.getMessage("services.searchRequest.noMatchingUnits", null, LocaleContextHolder.getLocale()));
+                    failureReason);
         }
 
         AccSearchRequest searchRequest = new AccSearchRequest();
@@ -177,17 +179,37 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         log.info("Successfully created search request with ID: {} for user: {}", saved.getId(), authorId);
     }
 
-    private boolean checkAvailableUnits(AccSearchRequestCreateRequest request,
+    private String checkAvailableUnits(AccSearchRequestCreateRequest request,
                                        List<District> districts,
                                        List<Dictionary> services,
-                                       List<Dictionary> conditions) {
+                                       List<Dictionary> conditions,
+                                       LocalDateTime checkInDate,
+                                       LocalDateTime checkOutDate) {
 
         Set<Long> districtIds = new HashSet<>();
+        String districtNames = districts.stream()
+                .map(District::getName)
+                .collect(Collectors.joining(", "));
+
         for (District district : districts) {
             districtIds.add(district.getId());
         }
 
         List<AccommodationUnit> units = accommodationUnitRepository.findAll();
+
+        if (units.isEmpty()) {
+            return messageSource.getMessage("services.searchRequest.noAccommodations", null, LocaleContextHolder.getLocale());
+        }
+
+        int totalUnits = 0;
+        int failedByType = 0;
+        int failedByDistrict = 0;
+        int failedByRating = 0;
+        int failedByCapacity = 0;
+        int failedByServices = 0;
+        int failedByConditions = 0;
+        int failedByPrice = 0;
+        int failedByDates = 0;
 
         for (AccommodationUnit unit : units) {
             if (unit.getIsDeleted() || !unit.getIsAvailable()) {
@@ -199,22 +221,29 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 continue;
             }
 
+            totalUnits++;
+
             if (!request.getUnitTypes().contains(unit.getUnitType())) {
+                failedByType++;
                 continue;
             }
 
             if (!districtIds.contains(acc.getDistrict().getId())) {
+                failedByDistrict++;
                 continue;
             }
 
             if (request.getFromRating() != null && acc.getRating() < request.getFromRating()) {
+                failedByRating++;
                 continue;
             }
             if (request.getToRating() != null && acc.getRating() > request.getToRating()) {
+                failedByRating++;
                 continue;
             }
 
             if (unit.getCapacity() < request.getCountOfPeople()) {
+                failedByCapacity++;
                 continue;
             }
 
@@ -234,6 +263,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 }
             }
             if (!hasAllServices) {
+                failedByServices++;
                 continue;
             }
 
@@ -253,13 +283,89 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                 }
             }
             if (!hasAllConditions) {
+                failedByConditions++;
                 continue;
             }
 
-            return true;
+            if (request.getPrice() != null && !unit.getTariffs().isEmpty()) {
+                Double minPrice = unit.getTariffs().stream()
+                        .map(AccUnitTariffs::getPrice)
+                        .min(Double::compareTo)
+                        .orElse(null);
+
+                if (minPrice != null && minPrice > request.getPrice()) {
+                    failedByPrice++;
+                    continue;
+                }
+            }
+
+            if (reservationRepository.isUnitReservedForPeriod(unit.getId(), checkInDate, checkOutDate)) {
+                failedByDates++;
+                continue;
+            }
+
+            return null;
         }
 
-        return false;
+        if (failedByDistrict > 0 && failedByDistrict == totalUnits) {
+            return messageSource.getMessage("services.searchRequest.noMatchingDistricts",
+                    new Object[]{districtNames}, LocaleContextHolder.getLocale());
+        }
+
+        if (failedByDates > 0) {
+            return messageSource.getMessage("services.searchRequest.noAvailableDates",
+                    null, LocaleContextHolder.getLocale());
+        }
+
+        if (failedByPrice > 0) {
+            return messageSource.getMessage("services.searchRequest.noMatchingPrice",
+                    new Object[]{request.getPrice()}, LocaleContextHolder.getLocale());
+        }
+
+        if (failedByCapacity > 0) {
+            return messageSource.getMessage("services.searchRequest.noMatchingCapacity",
+                    new Object[]{request.getCountOfPeople()}, LocaleContextHolder.getLocale());
+        }
+
+        if (failedByType > 0) {
+            String types = request.getUnitTypes().stream()
+                    .map(UnitType::name)
+                    .collect(Collectors.joining(", "));
+            return messageSource.getMessage("services.searchRequest.noMatchingTypes",
+                    new Object[]{types}, LocaleContextHolder.getLocale());
+        }
+
+        if (failedByRating > 0) {
+            if (request.getFromRating() != null && request.getToRating() != null) {
+                return messageSource.getMessage("services.searchRequest.noMatchingRatingRange",
+                        new Object[]{request.getFromRating(), request.getToRating()}, LocaleContextHolder.getLocale());
+            } else if (request.getFromRating() != null) {
+                return messageSource.getMessage("services.searchRequest.noMatchingRatingFrom",
+                        new Object[]{request.getFromRating()}, LocaleContextHolder.getLocale());
+            } else {
+                return messageSource.getMessage("services.searchRequest.noMatchingRatingTo",
+                        new Object[]{request.getToRating()}, LocaleContextHolder.getLocale());
+            }
+        }
+
+        if (failedByServices > 0) {
+            String serviceNames = services.stream()
+                    .map(Dictionary::getValue)
+                    .collect(Collectors.joining(", "));
+            return messageSource.getMessage("services.searchRequest.noMatchingServices",
+                    new Object[]{serviceNames}, LocaleContextHolder.getLocale());
+        }
+
+        if (failedByConditions > 0) {
+            String conditionNames = conditions.stream()
+                    .map(Dictionary::getValue)
+                    .collect(Collectors.joining(", "));
+            return messageSource.getMessage("services.searchRequest.noMatchingConditions",
+                    new Object[]{conditionNames}, LocaleContextHolder.getLocale());
+        }
+
+        return messageSource.getMessage("services.searchRequest.noMatchingGeneral",
+                null, LocaleContextHolder.getLocale());
     }
 
     @Override
@@ -269,7 +375,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         var searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
-                        messageSource.getMessage("services.searchRequest.notFound", 
+                        messageSource.getMessage("services.searchRequest.notFound",
                                 new Object[]{id}, LocaleContextHolder.getLocale())));
         return searchRequestMapper.toDto(searchRequest);
     }
@@ -280,8 +386,8 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         log.info("Fetching search requests for user: {}", authorId);
 
         var author = userRepository.findByKeycloakId(authorId)
-                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", 
-                        messageSource.getMessage("services.searchRequest.userNotFound", 
+                .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND",
+                        messageSource.getMessage("services.searchRequest.userNotFound",
                                 new Object[]{authorId}, LocaleContextHolder.getLocale())));
 
         Page<AccSearchRequest> requests = accSearchRequestRepository.findAllByAuthor_IdAndIsDeletedFalse(author.getId(), pageable);
@@ -297,7 +403,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         var searchRequest = accSearchRequestRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new DbObjectNotFoundException(HttpStatus.NOT_FOUND,
                         "SEARCH_REQUEST_NOT_FOUND",
-                        messageSource.getMessage("services.searchRequest.notFound", 
+                        messageSource.getMessage("services.searchRequest.notFound",
                                 new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (!searchRequest.getAuthor().getKeycloakId().equals(authorId)) {

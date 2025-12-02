@@ -23,4 +23,7 @@ public class UserResponse {
 
     @Schema(description = "Фамилия", example = "Иванов")
     private String lastName;
+
+    @Schema(description = "URL фотографии профиля", example = "http://localhost:8080/uploads/user-photos/user_123_abc.jpg")
+    private String photoUrl;
 }
