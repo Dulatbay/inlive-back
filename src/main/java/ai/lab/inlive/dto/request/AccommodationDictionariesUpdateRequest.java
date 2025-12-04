@@ -14,4 +14,3 @@ public class AccommodationDictionariesUpdateRequest {
     @Schema(description = "Список ID условий (ACC_CONDITION) - заменяет текущий список", example = "[4, 5, 6]")
     private List<Long> conditionDictionaryIds;
 }
-

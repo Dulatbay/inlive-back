@@ -26,6 +26,15 @@ public class ReservationResponse {
     @Schema(description = "Название объекта размещения", example = "Гранд Отель")
     private String accommodationName;
 
+    @Schema(description = "Город", example = "Алматы")
+    private String city;
+
+    @Schema(description = "Район", example = "Алмалинский район")
+    private String district;
+
+    @Schema(description = "Адрес", example = "ул. Абая 123")
+    private String address;
+
     @Schema(description = "ID заявки на цену", example = "1")
     private Long priceRequestId;
 
