@@ -93,7 +93,9 @@ public class PriceRequestServiceImpl implements PriceRequestService {
                         messageSource.getMessage("services.priceRequest.notFound", 
                                 new Object[]{priceRequestId}, LocaleContextHolder.getLocale())));
 
-        priceRequest.setStatus(request.getStatus());
+        if (request.getStatus() != null) {
+            priceRequest.setStatus(request.getStatus());
+        }
         priceRequest.setPrice(request.getPrice());
 
         priceRequest.setClientResponseStatus(ClientResponseStatus.WAITING);
