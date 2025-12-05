@@ -30,7 +30,7 @@ public class User extends AbstractEntity<Long> {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(name = "photo_url", unique = true)
+    @Column(name = "photo_url")
     private String photoUrl;
 
     @OneToMany(mappedBy = "approvedBy", cascade = CascadeType.ALL, orphanRemoval = true)
