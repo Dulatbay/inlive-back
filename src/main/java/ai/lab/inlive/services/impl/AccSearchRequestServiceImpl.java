@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -139,6 +140,10 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         searchRequest.setToRating(request.getToRating());
         searchRequest.setStatus(SearchRequestStatus.OPEN_TO_PRICE_REQUEST);
 
+        LocalDateTime expiresAt = calculateExpirationTime(checkInDateTime);
+        searchRequest.setExpiresAt(expiresAt);
+        log.info("Search request will expire at: {}", expiresAt);
+
         AccSearchRequest saved = accSearchRequestRepository.save(searchRequest);
 
         Set<AccSearchRequestUnitType> unitTypes = new HashSet<>();
@@ -177,6 +182,18 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         saved = accSearchRequestRepository.save(saved);
 
         log.info("Successfully created search request with ID: {} for user: {}", saved.getId(), authorId);
+    }
+
+    private LocalDateTime calculateExpirationTime(LocalDateTime checkInDate) {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
+        LocalDate checkInDay = checkInDate.toLocalDate();
+
+        if (today.equals(checkInDay)) {
+            return now.plusHours(8);
+        } else {
+            return now.plusHours(24);
+        }
     }
 
     private String checkAvailableUnits(AccSearchRequestCreateRequest request,
@@ -293,7 +310,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         .min(Double::compareTo)
                         .orElse(null);
 
-                if (minPrice != null && minPrice > request.getPrice()) {
+                if (minPrice > request.getPrice()) {
                     failedByPrice++;
                     continue;
                 }
@@ -308,22 +325,22 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
         }
 
         if (failedByDistrict > 0 && failedByDistrict == totalUnits) {
-            return messageSource.getMessage("services.searchRequest.noMatchingDistricts",
+            return messageSource.getMessage("services.searchRequest.noMatchingDistricts", 
                     new Object[]{districtNames}, LocaleContextHolder.getLocale());
         }
 
         if (failedByDates > 0) {
-            return messageSource.getMessage("services.searchRequest.noAvailableDates",
+            return messageSource.getMessage("services.searchRequest.noAvailableDates", 
                     null, LocaleContextHolder.getLocale());
         }
 
         if (failedByPrice > 0) {
-            return messageSource.getMessage("services.searchRequest.noMatchingPrice",
+            return messageSource.getMessage("services.searchRequest.noMatchingPrice", 
                     new Object[]{request.getPrice()}, LocaleContextHolder.getLocale());
         }
 
         if (failedByCapacity > 0) {
-            return messageSource.getMessage("services.searchRequest.noMatchingCapacity",
+            return messageSource.getMessage("services.searchRequest.noMatchingCapacity", 
                     new Object[]{request.getCountOfPeople()}, LocaleContextHolder.getLocale());
         }
 
@@ -331,19 +348,19 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             String types = request.getUnitTypes().stream()
                     .map(UnitType::name)
                     .collect(Collectors.joining(", "));
-            return messageSource.getMessage("services.searchRequest.noMatchingTypes",
+            return messageSource.getMessage("services.searchRequest.noMatchingTypes", 
                     new Object[]{types}, LocaleContextHolder.getLocale());
         }
 
         if (failedByRating > 0) {
             if (request.getFromRating() != null && request.getToRating() != null) {
-                return messageSource.getMessage("services.searchRequest.noMatchingRatingRange",
+                return messageSource.getMessage("services.searchRequest.noMatchingRatingRange", 
                         new Object[]{request.getFromRating(), request.getToRating()}, LocaleContextHolder.getLocale());
             } else if (request.getFromRating() != null) {
-                return messageSource.getMessage("services.searchRequest.noMatchingRatingFrom",
+                return messageSource.getMessage("services.searchRequest.noMatchingRatingFrom", 
                         new Object[]{request.getFromRating()}, LocaleContextHolder.getLocale());
             } else {
-                return messageSource.getMessage("services.searchRequest.noMatchingRatingTo",
+                return messageSource.getMessage("services.searchRequest.noMatchingRatingTo", 
                         new Object[]{request.getToRating()}, LocaleContextHolder.getLocale());
             }
         }
@@ -352,7 +369,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             String serviceNames = services.stream()
                     .map(Dictionary::getValue)
                     .collect(Collectors.joining(", "));
-            return messageSource.getMessage("services.searchRequest.noMatchingServices",
+            return messageSource.getMessage("services.searchRequest.noMatchingServices", 
                     new Object[]{serviceNames}, LocaleContextHolder.getLocale());
         }
 
@@ -360,11 +377,11 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             String conditionNames = conditions.stream()
                     .map(Dictionary::getValue)
                     .collect(Collectors.joining(", "));
-            return messageSource.getMessage("services.searchRequest.noMatchingConditions",
+            return messageSource.getMessage("services.searchRequest.noMatchingConditions", 
                     new Object[]{conditionNames}, LocaleContextHolder.getLocale());
         }
 
-        return messageSource.getMessage("services.searchRequest.noMatchingGeneral",
+        return messageSource.getMessage("services.searchRequest.noMatchingGeneral", 
                 null, LocaleContextHolder.getLocale());
     }
 

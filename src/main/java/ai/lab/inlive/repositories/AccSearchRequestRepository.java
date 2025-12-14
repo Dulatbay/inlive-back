@@ -24,6 +24,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
             INNER JOIN accommodations acc ON acc.id = au.acc_id AND acc.is_deleted = FALSE
             WHERE asr.status IN ('OPEN_TO_PRICE_REQUEST', 'PRICE_REQUEST_PENDING', 'WAIT_TO_RESERVATION')
               AND asr.is_deleted = FALSE
+              AND asr.expires_at > EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT
             -- Проверка рейтинга
               AND (asr.from_rating IS NULL OR acc.rating >= asr.from_rating)
               AND (asr.to_rating IS NULL OR acc.rating <= asr.to_rating)
@@ -73,6 +74,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
             INNER JOIN accommodations acc ON acc.id = au.acc_id AND acc.is_deleted = FALSE
             WHERE asr.status IN ('OPEN_TO_PRICE_REQUEST', 'PRICE_REQUEST_PENDING', 'WAIT_TO_RESERVATION')
               AND asr.is_deleted = FALSE
+              AND asr.expires_at > EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT
               AND (asr.from_rating IS NULL OR acc.rating >= asr.from_rating)
               AND (asr.to_rating IS NULL OR acc.rating <= asr.to_rating)
               AND EXISTS (
@@ -122,6 +124,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
             INNER JOIN accommodation_units au ON au.acc_id = acc.id AND au.is_deleted = FALSE
             WHERE asr.status IN ('OPEN_TO_PRICE_REQUEST', 'PRICE_REQUEST_PENDING', 'WAIT_TO_RESERVATION')
               AND asr.is_deleted = FALSE
+              AND asr.expires_at > EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT
               AND (asr.from_rating IS NULL OR acc.rating >= asr.from_rating)
               AND (asr.to_rating IS NULL OR acc.rating <= asr.to_rating)
               AND EXISTS (
@@ -144,7 +147,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
                     AND asrd.is_deleted = FALSE
                     AND NOT EXISTS (
                         SELECT 1 FROM acc_unit_dictionary aud
-                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id 
+                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id
                             AND au2.acc_id = acc.id AND au2.is_deleted = FALSE
                         WHERE aud.dictionary_id = d.id
                           AND aud.is_deleted = FALSE
@@ -158,7 +161,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
                     AND asrd.is_deleted = FALSE
                     AND NOT EXISTS (
                         SELECT 1 FROM acc_unit_dictionary aud
-                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id 
+                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id
                             AND au2.acc_id = acc.id AND au2.is_deleted = FALSE
                         WHERE aud.dictionary_id = d.id
                           AND aud.is_deleted = FALSE
@@ -172,6 +175,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
             INNER JOIN accommodation_units au ON au.acc_id = acc.id AND au.is_deleted = FALSE
             WHERE asr.status IN ('OPEN_TO_PRICE_REQUEST', 'PRICE_REQUEST_PENDING', 'WAIT_TO_RESERVATION')
               AND asr.is_deleted = FALSE
+              AND asr.expires_at > EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT
               AND (asr.from_rating IS NULL OR acc.rating >= asr.from_rating)
               AND (asr.to_rating IS NULL OR acc.rating <= asr.to_rating)
               AND EXISTS (
@@ -193,7 +197,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
                     AND asrd.is_deleted = FALSE
                     AND NOT EXISTS (
                         SELECT 1 FROM acc_unit_dictionary aud
-                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id 
+                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id
                             AND au2.acc_id = acc.id AND au2.is_deleted = FALSE
                         WHERE aud.dictionary_id = d.id
                           AND aud.is_deleted = FALSE
@@ -206,7 +210,7 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
                     AND asrd.is_deleted = FALSE
                     AND NOT EXISTS (
                         SELECT 1 FROM acc_unit_dictionary aud
-                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id 
+                        INNER JOIN accommodation_units au2 ON au2.id = aud.accommodation_unit_id
                             AND au2.acc_id = acc.id AND au2.is_deleted = FALSE
                         WHERE aud.dictionary_id = d.id
                           AND aud.is_deleted = FALSE
