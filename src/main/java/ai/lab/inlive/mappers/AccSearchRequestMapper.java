@@ -68,4 +68,3 @@ public interface AccSearchRequestMapper {
                 .collect(Collectors.toList());
     }
 }
-

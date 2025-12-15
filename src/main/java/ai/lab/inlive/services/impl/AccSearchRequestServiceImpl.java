@@ -312,7 +312,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         .min(Double::compareTo)
                         .orElse(null);
 
-                if (minPrice == null || minPrice > request.getPrice()) {
+                if (minPrice > request.getPrice()) {
                     failedByPrice++;
                     continue;
                 }
