@@ -8,5 +8,6 @@ public enum SearchRequestStatus {
     PRICE_REQUEST_PENDING,
     WAIT_TO_RESERVATION,
     FINISHED,
-    CANCELLED
+    CANCELLED,
+    EXPIRED
 }

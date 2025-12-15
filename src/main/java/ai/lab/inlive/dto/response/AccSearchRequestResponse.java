@@ -43,6 +43,9 @@ public class AccSearchRequestResponse {
     @Schema(description = "Статус заявки", example = "OPEN_TO_PRICE_REQUEST")
     private String status;
 
+    @Schema(description = "Дата и время истечения заявки", example = "2024-12-01T18:00:00")
+    private LocalDateTime expiresAt;
+
     @Schema(description = "Список типов недвижимости")
     private List<String> unitTypes;
 
@@ -58,4 +61,3 @@ public class AccSearchRequestResponse {
     @Schema(description = "Дата создания заявки", example = "2024-11-01T10:00:00")
     private LocalDateTime createdAt;
 }
-

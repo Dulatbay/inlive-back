@@ -41,4 +41,3 @@ public class PriceRequestResponse {
     @Schema(description = "Является ли запись удаленной", example = "false")
     private Boolean isDeleted;
 }
-

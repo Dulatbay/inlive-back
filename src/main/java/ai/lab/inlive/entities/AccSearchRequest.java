@@ -1,5 +1,6 @@
 package ai.lab.inlive.entities;
 
+import ai.lab.inlive.config.converters.LocalDateTimeAttributeConverter;
 import ai.lab.inlive.entities.enums.SearchRequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -42,6 +43,10 @@ public class AccSearchRequest extends AbstractEntity<Long> {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SearchRequestStatus status;
+
+    @Column(name = "expires_at", nullable = false)
+    @Convert(converter = LocalDateTimeAttributeConverter.class)
+    private LocalDateTime expiresAt;
 
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccSearchRequestUnitType> unitTypes = new HashSet<>();

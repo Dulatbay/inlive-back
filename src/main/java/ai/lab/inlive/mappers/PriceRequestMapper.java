@@ -24,4 +24,3 @@ public interface PriceRequestMapper {
     @Mapping(target = "clientResponseStatus", expression = "java(priceRequest.getClientResponseStatus() != null ? priceRequest.getClientResponseStatus().name() : null)")
     PriceRequestResponse toDto(PriceRequest priceRequest);
 }
-
