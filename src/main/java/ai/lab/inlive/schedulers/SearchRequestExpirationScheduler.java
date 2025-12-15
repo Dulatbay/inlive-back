@@ -9,7 +9,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -23,14 +22,7 @@ public class SearchRequestExpirationScheduler {
     public void checkAndExpireSearchRequests() {
         log.debug("Starting search request expiration check...");
 
-        LocalDateTime now = LocalDateTime.now();
-
-        List<AccSearchRequest> expiredRequests = accSearchRequestRepository.findAll().stream()
-                .filter(request -> !request.getIsDeleted())
-                .filter(request -> request.getStatus() == SearchRequestStatus.OPEN_TO_PRICE_REQUEST
-                        || request.getStatus() == SearchRequestStatus.PRICE_REQUEST_PENDING)
-                .filter(request -> request.getExpiresAt() != null && request.getExpiresAt().isBefore(now))
-                .toList();
+        List<AccSearchRequest> expiredRequests = accSearchRequestRepository.findExpiredRequests();
 
         if (!expiredRequests.isEmpty()) {
             log.info("Found {} expired search requests", expiredRequests.size());

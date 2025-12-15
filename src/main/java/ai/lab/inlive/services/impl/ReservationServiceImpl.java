@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+import static ai.lab.inlive.constants.ValueConstants.ZONE_ID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -274,7 +276,7 @@ public class ReservationServiceImpl implements ReservationService {
 
         AccSearchRequest searchRequest = reservation.getSearchRequest();
         LocalDateTime checkInDate = searchRequest.getFromDate();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZONE_ID);
         LocalDateTime oneDayBeforeCheckIn = checkInDate.minusDays(1);
 
         if (now.isAfter(oneDayBeforeCheckIn)) {

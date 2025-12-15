@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ai.lab.inlive.constants.ValueConstants.ZONE_ID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -185,7 +187,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
     }
 
     private LocalDateTime calculateExpirationTime(LocalDateTime checkInDate) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZONE_ID);
         LocalDate today = now.toLocalDate();
         LocalDate checkInDay = checkInDate.toLocalDate();
 
@@ -310,7 +312,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         .min(Double::compareTo)
                         .orElse(null);
 
-                if (minPrice > request.getPrice()) {
+                if (minPrice == null || minPrice > request.getPrice()) {
                     failedByPrice++;
                     continue;
                 }

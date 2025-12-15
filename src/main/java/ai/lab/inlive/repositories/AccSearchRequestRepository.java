@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +17,16 @@ public interface AccSearchRequestRepository extends JpaRepository<AccSearchReque
     Optional<AccSearchRequest> findByIdAndIsDeletedFalse(Long id);
 
     Page<AccSearchRequest> findAllByAuthor_IdAndIsDeletedFalse(Long id, Pageable pageable);
+
+    @Query(value = """
+            SELECT asr.*
+            FROM acc_search_request asr
+            WHERE asr.is_deleted = FALSE
+              AND asr.status IN ('OPEN_TO_PRICE_REQUEST', 'PRICE_REQUEST_PENDING')
+              AND asr.expires_at < EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT
+            """,
+            nativeQuery = true)
+    List<AccSearchRequest> findExpiredRequests();
 
     @Query(value = """
             SELECT DISTINCT asr.*
