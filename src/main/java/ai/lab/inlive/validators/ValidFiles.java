@@ -8,11 +8,12 @@ import java.lang.annotation.*;
 @Documented
 @Target({ElementType.PARAMETER, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = {FileValidator.class})
-public @interface ValidFile {
+@Constraint(validatedBy = {FilesValidator.class})
+public @interface ValidFiles {
     String message() default "{error.upload.invalidFileFormat}";
 
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};
 }
+

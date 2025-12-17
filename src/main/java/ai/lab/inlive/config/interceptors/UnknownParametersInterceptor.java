@@ -35,6 +35,11 @@ public class UnknownParametersInterceptor implements HandlerInterceptor {
             return true;
         }
 
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.startsWith("multipart/form-data")) {
+            return true;
+        }
+
         Parameter[] parameters = handlerMethod.getMethod().getParameters();
         Set<String> validParamNames = new HashSet<>();
         

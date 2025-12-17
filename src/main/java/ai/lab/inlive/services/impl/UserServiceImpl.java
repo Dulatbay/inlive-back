@@ -216,7 +216,6 @@ public class UserServiceImpl implements UserService {
         log.info("Successfully updated profile photo for user with ID: {}", keycloakId);
     }
 
-
     @Override
     @Transactional
     public void deleteUserPhoto(String keycloakId) {

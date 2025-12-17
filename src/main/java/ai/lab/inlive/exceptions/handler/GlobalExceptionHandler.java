@@ -4,6 +4,8 @@ import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.exceptions.ForbiddenException;
 import ai.lab.inlive.exceptions.UnauthorizedException;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -21,6 +23,7 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice
@@ -57,6 +60,24 @@ public class GlobalExceptionHandler {
                 .validationErrors(errors)
                 .build();
 
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolationException(ConstraintViolationException ex) {
+        log.warn("Constraint violation: {}", ex.getMessage());
+        
+        String message = ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining(", "));
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(messageSource.getMessage("error.badRequest", null, LocaleContextHolder.getLocale()))
+                .message(message)
+                .build();
+        
         return ResponseEntity.badRequest().body(errorResponse);
     }
 

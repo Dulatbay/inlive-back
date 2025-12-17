@@ -1,5 +1,6 @@
 package ai.lab.inlive.dto.request;
 
+import ai.lab.inlive.validators.ValidFiles;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -34,5 +35,6 @@ public class AccommodationCreateRequest {
 
     private List<Long> conditionDictionaryIds;
 
+    @ValidFiles
     private List<MultipartFile> images;
 }

@@ -10,6 +10,7 @@ import ai.lab.inlive.dto.response.AccommodationResponse;
 import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
 import ai.lab.inlive.services.AccommodationService;
 import ai.lab.inlive.constants.Utils;
+import ai.lab.inlive.validators.ValidFiles;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Slf4j
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/accommodations")
@@ -146,7 +149,7 @@ public class AccommodationController {
     public ResponseEntity<Void> updateAccommodationPhotos(
             @Parameter(description = "ID размещения", example = "1")
             @PathVariable Long id,
-            @RequestPart("images") List<MultipartFile> images) {
+            @ValidFiles @RequestPart("images") List<MultipartFile> images) {
         accommodationService.updateAccommodationPhotos(id, images);
         return ResponseEntity.ok().build();
     }
