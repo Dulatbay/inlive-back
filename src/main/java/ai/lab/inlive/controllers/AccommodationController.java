@@ -49,12 +49,18 @@ public class AccommodationController {
     @Operation(summary = "Создать размещение", description = "Создание нового размещения. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Размещение успешно создано"),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или неверный формат файлов", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", content = @Content),
-            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Город, район или владелец не найден", content = @Content),
-            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или неверный формат файлов", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Город, район или владелец не найден", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> createAccommodation(
