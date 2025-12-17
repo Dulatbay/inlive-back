@@ -6,6 +6,7 @@ import ai.lab.inlive.dto.response.AuthResponse;
 import ai.lab.inlive.dto.response.KeycloakTokenResponse;
 import ai.lab.inlive.entities.User;
 import ai.lab.inlive.entities.enums.TokenType;
+import ai.lab.inlive.exceptions.UnauthorizedException;
 import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakError;
@@ -17,7 +18,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.InternalServerErrorException;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +75,6 @@ public class KeycloakServiceImpl implements KeycloakService {
                 }
             }
 
-            // todo: create user in database
             User user = new User();
             user.setKeycloakId(userId);
             user.setFirstName(baseUser.getFirstName());
@@ -86,12 +85,29 @@ public class KeycloakServiceImpl implements KeycloakService {
 
             try {
                 userRepository.save(user);
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                log.error("Data integrity violation while saving user: {}", user, e);
+                handleExceptionAfterUserIdCreated(userId);
+
+                String errorMessage = e.getMessage();
+                if (errorMessage != null) {
+                    String lowerCaseMessage = errorMessage.toLowerCase();
+                    if (lowerCaseMessage.contains("username") || lowerCaseMessage.contains("user_name")) {
+                        throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.usernameExists", null, LocaleContextHolder.getLocale()));
+                    } else if (lowerCaseMessage.contains("email")) {
+                        throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.emailExists", null, LocaleContextHolder.getLocale()));
+                    }
+                }
+                throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.userAlreadyExists", null, LocaleContextHolder.getLocale()));
             } catch (Exception e) {
-                log.error("Failed to save user in the database: {}", user, e);
-                throw new IllegalStateException(messageSource.getMessage("error.keycloak.failedToSaveUser", null, LocaleContextHolder.getLocale()), e);
+                log.error("Unexpected error while saving user in the database: {}", user, e);
+                handleExceptionAfterUserIdCreated(userId);
+                throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.failedToSaveUser", null, LocaleContextHolder.getLocale()), e);
             }
 
             return userResource.toRepresentation();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw e;
         } catch (Exception e) {
             handleExceptionAfterUserIdCreated(userId);
             throw e;
@@ -234,8 +250,18 @@ public class KeycloakServiceImpl implements KeycloakService {
                 throw new RuntimeException(messageSource.getMessage("error.auth.failedToGetAuthResponse", 
                         new Object[]{response.getStatusCode()}, LocaleContextHolder.getLocale()));
             }
+        } catch (HttpClientErrorException.Unauthorized e) {
+            log.warn("Authentication failed for user '{}': Invalid credentials", username);
+            throw new UnauthorizedException(messageSource.getMessage("error.auth.invalidCredentials", null, LocaleContextHolder.getLocale()));
+        } catch (HttpClientErrorException e) {
+            log.error("HTTP error from Keycloak: {} - {}", e.getStatusCode(), e.getMessage());
+            if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                throw new UnauthorizedException(messageSource.getMessage("error.auth.invalidCredentials", null, LocaleContextHolder.getLocale()));
+            }
+            throw new UnauthorizedException(messageSource.getMessage("error.auth.invalidCredentials", null, LocaleContextHolder.getLocale()));
         } catch (Exception e) {
-            throw new IllegalArgumentException(messageSource.getMessage("error.auth.invalidCredentials", null, LocaleContextHolder.getLocale()) + ": " + e.getMessage());
+            log.error("Unexpected error during authentication: ", e);
+            throw new UnauthorizedException(messageSource.getMessage("error.auth.invalidCredentials", null, LocaleContextHolder.getLocale()));
         }
     }
 
@@ -349,7 +375,7 @@ public class KeycloakServiceImpl implements KeycloakService {
 
 
             userResource.resetPassword(newPassword);
-        } catch (NotAuthorizedException e) {
+        } catch (jakarta.ws.rs.NotAuthorizedException e) {
             log.error("Old password is incorrect for user with ID: {}", keycloakId);
             throw new IllegalArgumentException(messageSource.getMessage("error.keycloak.incorrectOldPassword", null, LocaleContextHolder.getLocale()));
         }

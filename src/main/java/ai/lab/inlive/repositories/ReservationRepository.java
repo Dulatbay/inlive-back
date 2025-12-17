@@ -13,28 +13,66 @@ import java.util.Optional;
 
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
+    
+    @Query("SELECT DISTINCT r FROM Reservation r " +
+            "LEFT JOIN FETCH r.unit u " +
+            "LEFT JOIN FETCH u.accommodation acc " +
+            "LEFT JOIN FETCH acc.city " +
+            "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH r.approvedBy " +
+            "LEFT JOIN FETCH r.priceRequest " +
+            "LEFT JOIN FETCH r.searchRequest " +
+            "WHERE r.id = :id AND r.isDeleted = false")
     Optional<Reservation> findByIdAndIsDeletedFalse(Long id);
 
-    @Query("SELECT r FROM Reservation r " +
+    @Query("SELECT DISTINCT r FROM Reservation r " +
+            "LEFT JOIN FETCH r.unit u " +
+            "LEFT JOIN FETCH u.accommodation acc " +
+            "LEFT JOIN FETCH acc.city " +
+            "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH r.approvedBy " +
+            "LEFT JOIN FETCH r.priceRequest " +
+            "LEFT JOIN FETCH r.searchRequest " +
             "WHERE r.unit.id = :unitId " +
             "AND r.isDeleted = false " +
             "ORDER BY r.createdAt DESC")
     Page<Reservation> findActiveByUnitId(@Param("unitId") Long unitId, Pageable pageable);
 
-    @Query("SELECT r FROM Reservation r " +
+    @Query("SELECT DISTINCT r FROM Reservation r " +
+            "LEFT JOIN FETCH r.unit u " +
+            "LEFT JOIN FETCH u.accommodation acc " +
+            "LEFT JOIN FETCH acc.city " +
+            "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH r.approvedBy " +
+            "LEFT JOIN FETCH r.priceRequest " +
+            "LEFT JOIN FETCH r.searchRequest " +
             "WHERE r.unit.accommodation.id = :accommodationId " +
             "AND r.isDeleted = false " +
             "ORDER BY r.createdAt DESC")
     Page<Reservation> findByAccommodationId(@Param("accommodationId") Long accommodationId, Pageable pageable);
 
-    @Query("SELECT r FROM Reservation r " +
+    @Query("SELECT DISTINCT r FROM Reservation r " +
+            "LEFT JOIN FETCH r.unit u " +
+            "LEFT JOIN FETCH u.accommodation acc " +
+            "LEFT JOIN FETCH acc.city " +
+            "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH r.approvedBy " +
+            "LEFT JOIN FETCH r.priceRequest " +
+            "LEFT JOIN FETCH r.searchRequest " +
             "WHERE r.unit.id = :unitId " +
             "AND r.status = 'WAITING_TO_APPROVE' " +
             "AND r.isDeleted = false " +
             "ORDER BY r.createdAt DESC")
     Page<Reservation> findPendingByUnitId(@Param("unitId") Long unitId, Pageable pageable);
 
-    @Query("SELECT r FROM Reservation r " +
+    @Query("SELECT DISTINCT r FROM Reservation r " +
+            "LEFT JOIN FETCH r.unit u " +
+            "LEFT JOIN FETCH u.accommodation acc " +
+            "LEFT JOIN FETCH acc.city " +
+            "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH r.approvedBy " +
+            "LEFT JOIN FETCH r.priceRequest " +
+            "LEFT JOIN FETCH r.searchRequest " +
             "WHERE r.searchRequest.id = :searchRequestId " +
             "AND r.isDeleted = false " +
             "ORDER BY r.createdAt DESC")
@@ -54,7 +92,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                    @Param("checkInDate") LocalDateTime checkInDate,
                                    @Param("checkOutDate") LocalDateTime checkOutDate);
 
-    @Query("SELECT r FROM Reservation r " +
+    @Query("SELECT DISTINCT r FROM Reservation r " +
+            "LEFT JOIN FETCH r.unit u " +
+            "LEFT JOIN FETCH u.accommodation acc " +
+            "LEFT JOIN FETCH acc.city " +
+            "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH r.approvedBy " +
+            "LEFT JOIN FETCH r.priceRequest " +
+            "LEFT JOIN FETCH r.searchRequest " +
             "WHERE r.approvedBy.keycloakId = :clientId " +
             "AND r.isDeleted = false " +
             "ORDER BY r.createdAt DESC")

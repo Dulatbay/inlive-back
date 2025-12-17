@@ -2,10 +2,12 @@ package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
 import java.util.Set;
 
+@BatchSize(size = 50)
 @Getter
 @Setter
 @Entity
@@ -43,18 +45,23 @@ public class Accommodation extends AbstractEntity<Long> {
     @JoinColumn(name = "owner_id")
     private User ownerId;
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccImages> images = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccDocuments> documents = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccDictionary> dictionaries = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccConfig> configs = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "accommodation", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccommodationUnit> units = new HashSet<>();
 }

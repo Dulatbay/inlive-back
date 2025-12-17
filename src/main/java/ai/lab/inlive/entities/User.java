@@ -2,10 +2,12 @@ package ai.lab.inlive.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
 import java.util.Set;
 
+@BatchSize(size = 50)
 @Getter
 @Setter
 @Entity

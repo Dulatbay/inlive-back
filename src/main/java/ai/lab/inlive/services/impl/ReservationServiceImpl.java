@@ -9,6 +9,7 @@ import ai.lab.inlive.entities.enums.ClientResponseStatus;
 import ai.lab.inlive.entities.enums.ReservationStatus;
 import ai.lab.inlive.entities.enums.SearchRequestStatus;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
+import ai.lab.inlive.exceptions.ForbiddenException;
 import ai.lab.inlive.mappers.ReservationMapper;
 import ai.lab.inlive.repositories.*;
 import ai.lab.inlive.services.ReservationService;
@@ -52,14 +53,12 @@ public class ReservationServiceImpl implements ReservationService {
                                 new Object[]{request.getPriceRequestId()}, LocaleContextHolder.getLocale())));
 
         if (priceRequest.getClientResponseStatus() != ClientResponseStatus.ACCEPTED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "PRICE_REQUEST_NOT_ACCEPTED",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.priceRequestNotAccepted", null, LocaleContextHolder.getLocale()));
         }
 
         if (reservationRepository.existsByPriceRequestId(request.getPriceRequestId())) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "RESERVATION_ALREADY_EXISTS",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.alreadyExists", null, LocaleContextHolder.getLocale()));
         }
 
@@ -92,16 +91,14 @@ public class ReservationServiceImpl implements ReservationService {
                                 new Object[]{reservationId}, LocaleContextHolder.getLocale())));
 
         if (reservation.getStatus() != ReservationStatus.WAITING_TO_APPROVE) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "RESERVATION_NOT_WAITING",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.notWaiting", 
                             new Object[]{reservation.getStatus()}, LocaleContextHolder.getLocale()));
         }
 
         if (request.getStatus() != ReservationStatus.APPROVED &&
                 request.getStatus() != ReservationStatus.REJECTED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "INVALID_STATUS",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.invalidStatus", null, LocaleContextHolder.getLocale()));
         }
 
@@ -217,16 +214,14 @@ public class ReservationServiceImpl implements ReservationService {
                                 new Object[]{reservationId}, LocaleContextHolder.getLocale())));
 
         if (reservation.getStatus() != ReservationStatus.APPROVED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "RESERVATION_NOT_APPROVED",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.notApproved", 
                             new Object[]{reservation.getStatus()}, LocaleContextHolder.getLocale()));
         }
 
         if (request.getStatus() != ReservationStatus.FINISHED_SUCCESSFUL &&
                 request.getStatus() != ReservationStatus.CLIENT_DIDNT_CAME) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "INVALID_FINAL_STATUS",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.invalidFinalStatus", null, LocaleContextHolder.getLocale()));
         }
 
@@ -261,15 +256,13 @@ public class ReservationServiceImpl implements ReservationService {
                                 new Object[]{reservationId}, LocaleContextHolder.getLocale())));
 
         if (!reservation.getApprovedBy().getKeycloakId().equals(clientId)) {
-            throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
-                    "ACCESS_DENIED",
+            throw new ForbiddenException(
                     messageSource.getMessage("services.reservation.accessDenied", null, LocaleContextHolder.getLocale()));
         }
 
         if (reservation.getStatus() != ReservationStatus.WAITING_TO_APPROVE &&
                 reservation.getStatus() != ReservationStatus.APPROVED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "INVALID_STATUS_FOR_CANCELLATION",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.invalidStatusForCancellation", 
                             new Object[]{reservation.getStatus()}, LocaleContextHolder.getLocale()));
         }
@@ -280,8 +273,7 @@ public class ReservationServiceImpl implements ReservationService {
         LocalDateTime oneDayBeforeCheckIn = checkInDate.minusDays(1);
 
         if (now.isAfter(oneDayBeforeCheckIn)) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "TOO_LATE_TO_CANCEL",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.reservation.tooLateToCancel", 
                             new Object[]{checkInDate, now}, LocaleContextHolder.getLocale()));
         }

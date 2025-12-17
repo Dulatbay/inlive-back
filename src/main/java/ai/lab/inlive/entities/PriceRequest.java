@@ -4,7 +4,9 @@ import ai.lab.inlive.entities.enums.ClientResponseStatus;
 import ai.lab.inlive.entities.enums.PriceRequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
+@BatchSize(size = 50)
 @Getter
 @Setter
 @Entity

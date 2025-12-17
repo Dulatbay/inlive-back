@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -440,6 +442,24 @@ public class AccommodationServiceImpl implements AccommodationService {
         Page<AccSearchRequest> requests = accSearchRequestRepository.findRelevantRequestsForAccommodation(accommodationId, pageable);
 
         log.info("Found {} relevant requests for accommodation {}", requests.getTotalElements(), accommodationId);
+
+        if (!requests.isEmpty()) {
+            List<Long> ids = requests.getContent().stream()
+                    .map(AccSearchRequest::getId)
+                    .toList();
+
+            List<AccSearchRequest> fullRequests = accSearchRequestRepository.findAllByIdInWithFetchJoin(ids);
+
+            Map<Long, AccSearchRequest> requestMap = fullRequests.stream()
+                    .collect(Collectors.toMap(AccSearchRequest::getId, r -> r));
+
+            List<AccSearchRequestResponse> responses = requests.getContent().stream()
+                    .map(req -> searchRequestMapper.toDto(requestMap.get(req.getId())))
+                    .toList();
+
+            return new PageImpl<>(responses, pageable, requests.getTotalElements());
+        }
+
         return requests.map(searchRequestMapper::toDto);
     }
 }

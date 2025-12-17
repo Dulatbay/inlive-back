@@ -8,6 +8,7 @@ import ai.lab.inlive.entities.enums.DictionaryKey;
 import ai.lab.inlive.entities.enums.SearchRequestStatus;
 import ai.lab.inlive.entities.enums.UnitType;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
+import ai.lab.inlive.exceptions.ForbiddenException;
 import ai.lab.inlive.mappers.AccSearchRequestMapper;
 import ai.lab.inlive.repositories.*;
 import ai.lab.inlive.services.AccSearchRequestService;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -42,7 +44,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
     private final DictionaryRepository dictionaryRepository;
     private final AccommodationUnitRepository accommodationUnitRepository;
     private final ReservationRepository reservationRepository;
-    private final AccSearchRequestMapper searchRequestMapper;
+    private final AccSearchRequestMapper accSearchRequestMapperImpl;
     private final MessageSource messageSource;
 
     @Override
@@ -58,16 +60,14 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
             log.info("One night stay: checkOut automatically set to {}", checkOutDateTime);
         } else {
             if (request.getCheckOutDate() == null) {
-                throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                        "CHECKOUT_DATE_REQUIRED",
+                throw new IllegalArgumentException(
                         messageSource.getMessage("services.searchRequest.checkoutDateRequired", null, LocaleContextHolder.getLocale()));
             }
             checkOutDateTime = request.getCheckOutDate().atTime(12, 0);
         }
 
         if (checkOutDateTime.isBefore(checkInDateTime) || checkOutDateTime.isEqual(checkInDateTime)) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "INVALID_DATES",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.searchRequest.invalidDates", null, LocaleContextHolder.getLocale()));
         }
 
@@ -95,8 +95,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                                 messageSource.getMessage("services.searchRequest.dictionaryNotFound", 
                                         new Object[]{serviceId}, LocaleContextHolder.getLocale())));
                 if (service.getKey() != DictionaryKey.ACC_SERVICE) {
-                    throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                            "INVALID_DICTIONARY_KEY",
+                    throw new IllegalArgumentException(
                             messageSource.getMessage("services.searchRequest.invalidDictionaryKey", 
                                     new Object[]{serviceId, "ACC_SERVICE"}, LocaleContextHolder.getLocale()));
                 }
@@ -113,8 +112,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                                 messageSource.getMessage("services.searchRequest.dictionaryNotFound", 
                                         new Object[]{conditionId}, LocaleContextHolder.getLocale())));
                 if (condition.getKey() != DictionaryKey.ACC_CONDITION) {
-                    throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                            "INVALID_DICTIONARY_KEY",
+                    throw new IllegalArgumentException(
                             messageSource.getMessage("services.searchRequest.invalidDictionaryKey", 
                                     new Object[]{conditionId, "ACC_CONDITION"}, LocaleContextHolder.getLocale()));
                 }
@@ -126,9 +124,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
 
         if (failureReason != null) {
             log.warn("No matching accommodation units found: {}", failureReason);
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "NO_MATCHING_UNITS",
-                    failureReason);
+            throw new IllegalArgumentException(failureReason);
         }
 
         AccSearchRequest searchRequest = new AccSearchRequest();
@@ -396,7 +392,7 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         "SEARCH_REQUEST_NOT_FOUND",
                         messageSource.getMessage("services.searchRequest.notFound",
                                 new Object[]{id}, LocaleContextHolder.getLocale())));
-        return searchRequestMapper.toDto(searchRequest);
+        return accSearchRequestMapperImpl.toDto(searchRequest);
     }
 
     @Override
@@ -409,9 +405,27 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         messageSource.getMessage("services.searchRequest.userNotFound",
                                 new Object[]{authorId}, LocaleContextHolder.getLocale())));
 
-        Page<AccSearchRequest> requests = accSearchRequestRepository.findAllByAuthor_IdAndIsDeletedFalse(author.getId(), pageable);
+        Page<AccSearchRequest> requestsPage = accSearchRequestRepository.findAllByAuthor_IdAndIsDeletedFalse(author.getId(), pageable);
 
-        return requests.map(searchRequestMapper::toDto);
+        if (requestsPage.isEmpty()) {
+            return Page.empty(pageable);
+        }
+
+        List<Long> requestIds = requestsPage.getContent().stream()
+                .map(AccSearchRequest::getId)
+                .toList();
+
+        List<AccSearchRequest> requestsWithData = accSearchRequestRepository.findAllByIdInWithFetchJoin(requestIds);
+
+        List<AccSearchRequestResponse> responses = requestsWithData.stream()
+                .map(accSearchRequestMapperImpl::toDto)
+                .toList();
+
+        return new PageImpl<>(
+                responses,
+                pageable,
+                requestsPage.getTotalElements()
+        );
     }
 
     @Override
@@ -426,20 +440,17 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                                 new Object[]{id}, LocaleContextHolder.getLocale())));
 
         if (!searchRequest.getAuthor().getKeycloakId().equals(authorId)) {
-            throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
-                    "ACCESS_DENIED",
+            throw new ForbiddenException(
                     messageSource.getMessage("services.searchRequest.accessDenied", null, LocaleContextHolder.getLocale()));
         }
 
         if (searchRequest.getStatus() == SearchRequestStatus.CANCELLED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "SEARCH_REQUEST_CANCELLED",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.searchRequest.cancelled", null, LocaleContextHolder.getLocale()));
         }
 
         if (searchRequest.getStatus() == SearchRequestStatus.FINISHED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "SEARCH_REQUEST_FINISHED",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.searchRequest.finished", null, LocaleContextHolder.getLocale()));
         }
 
@@ -460,20 +471,17 @@ public class AccSearchRequestServiceImpl implements AccSearchRequestService {
                         "Search request not found with ID: " + id));
 
         if (!searchRequest.getAuthor().getKeycloakId().equals(authorId)) {
-            throw new DbObjectNotFoundException(HttpStatus.FORBIDDEN,
-                    "ACCESS_DENIED",
+            throw new ForbiddenException(
                     messageSource.getMessage("services.searchRequest.accessDenied", null, LocaleContextHolder.getLocale()));
         }
 
         if (searchRequest.getStatus() == SearchRequestStatus.CANCELLED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "SEARCH_REQUEST_ALREADY_CANCELLED",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.searchRequest.alreadyCancelled", null, LocaleContextHolder.getLocale()));
         }
 
         if (searchRequest.getStatus() == SearchRequestStatus.FINISHED) {
-            throw new DbObjectNotFoundException(HttpStatus.BAD_REQUEST,
-                    "SEARCH_REQUEST_ALREADY_FINISHED",
+            throw new IllegalArgumentException(
                     messageSource.getMessage("services.searchRequest.alreadyFinished", null, LocaleContextHolder.getLocale()));
         }
 

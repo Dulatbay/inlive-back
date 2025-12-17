@@ -14,38 +14,37 @@ import java.util.Optional;
 
 @Repository
 public interface AccommodationUnitRepository extends JpaRepository<AccommodationUnit, Long> {
+    
+    @Query("SELECT DISTINCT au FROM AccommodationUnit au " +
+            "LEFT JOIN FETCH au.accommodation " +
+            "LEFT JOIN FETCH au.dictionaries d " +
+            "LEFT JOIN FETCH d.dictionary " +
+            "LEFT JOIN FETCH au.tariffs t " +
+            "LEFT JOIN FETCH t.rangeType " +
+            "LEFT JOIN FETCH au.images " +
+            "WHERE au.id = :id AND au.isDeleted = false")
     Optional<AccommodationUnit> findByIdAndIsDeletedFalse(Long id);
 
+    @Query("SELECT DISTINCT au FROM AccommodationUnit au " +
+            "LEFT JOIN FETCH au.accommodation " +
+            "LEFT JOIN FETCH au.dictionaries d " +
+            "LEFT JOIN FETCH d.dictionary " +
+            "LEFT JOIN FETCH au.tariffs t " +
+            "LEFT JOIN FETCH t.rangeType " +
+            "LEFT JOIN FETCH au.images " +
+            "WHERE au.accommodation.id = :accommodationId AND au.isDeleted = false")
     List<AccommodationUnit> findByAccommodationIdAndIsDeletedFalse(Long accommodationId);
 
-    @Query(value = """
-            SELECT au.*
-            FROM accommodation_units au
-            LEFT JOIN accommodations a ON au.acc_id = a.id
-            WHERE (CAST(:#{#params.accommodationId} AS BIGINT) IS NULL OR a.id = CAST(:#{#params.accommodationId} AS BIGINT))
-            AND (NULLIF(TRIM(CAST(:#{#params.unitType} AS VARCHAR)), '') IS NULL OR au.unit_type ILIKE CAST(:#{#params.unitType} AS VARCHAR))
-              AND (CAST(:#{#params.isAvailable} AS BOOLEAN) IS NULL OR au.is_available = CAST(:#{#params.isAvailable} AS BOOLEAN))
-              AND (CAST(:#{#params.isDeleted} AS BOOLEAN) IS NULL OR au.is_deleted = CAST(:#{#params.isDeleted} AS BOOLEAN))
-              AND (NULLIF(TRIM(CAST(:#{#params.name} AS VARCHAR)), '') IS NULL OR au.name ILIKE CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')) 
-              AND (CAST(:#{#params.minCapacity} AS INTEGER) IS NULL OR au.capacity >= CAST(:#{#params.minCapacity} AS INTEGER))
-              AND (CAST(:#{#params.maxCapacity} AS INTEGER) IS NULL OR au.capacity <= CAST(:#{#params.maxCapacity} AS INTEGER))
-              AND (CAST(:#{#params.minArea} AS DOUBLE PRECISION) IS NULL OR au.area >= CAST(:#{#params.minArea} AS DOUBLE PRECISION))
-              AND (CAST(:#{#params.maxArea} AS DOUBLE PRECISION) IS NULL OR au.area <= CAST(:#{#params.maxArea} AS DOUBLE PRECISION))
-            """,
-            countQuery = """
-            SELECT COUNT(*)
-            FROM accommodation_units au
-            LEFT JOIN accommodations a ON au.acc_id = a.id
-            WHERE (CAST(:#{#params.accommodationId} AS BIGINT) IS NULL OR a.id = CAST(:#{#params.accommodationId} AS BIGINT))
-            AND (NULLIF(TRIM(CAST(:#{#params.unitType} AS VARCHAR)), '') IS NULL OR au.unit_type ILIKE CAST(:#{#params.unitType} AS VARCHAR))
-              AND (CAST(:#{#params.isAvailable} AS BOOLEAN) IS NULL OR au.is_available = CAST(:#{#params.isAvailable} AS BOOLEAN))
-              AND (CAST(:#{#params.isDeleted} AS BOOLEAN) IS NULL OR au.is_deleted = CAST(:#{#params.isDeleted} AS BOOLEAN))
-              AND (NULLIF(TRIM(CAST(:#{#params.name} AS VARCHAR)), '') IS NULL OR au.name ILIKE CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')) 
-              AND (CAST(:#{#params.minCapacity} AS INTEGER) IS NULL OR au.capacity >= CAST(:#{#params.minCapacity} AS INTEGER))
-              AND (CAST(:#{#params.maxCapacity} AS INTEGER) IS NULL OR au.capacity <= CAST(:#{#params.maxCapacity} AS INTEGER))
-              AND (CAST(:#{#params.minArea} AS DOUBLE PRECISION) IS NULL OR au.area >= CAST(:#{#params.minArea} AS DOUBLE PRECISION))
-              AND (CAST(:#{#params.maxArea} AS DOUBLE PRECISION) IS NULL OR au.area <= CAST(:#{#params.maxArea} AS DOUBLE PRECISION))
-            """,
-            nativeQuery = true)
+    @Query("SELECT DISTINCT au FROM AccommodationUnit au " +
+            "LEFT JOIN FETCH au.accommodation " +
+            "WHERE (:#{#params.accommodationId} IS NULL OR au.accommodation.id = :#{#params.accommodationId}) " +
+            "AND (:#{#params.unitType} IS NULL OR :#{#params.unitType} = '' OR UPPER(au.unitType) = UPPER(:#{#params.unitType})) " +
+            "AND (:#{#params.isAvailable} IS NULL OR au.isAvailable = :#{#params.isAvailable}) " +
+            "AND (:#{#params.isDeleted} IS NULL OR au.isDeleted = :#{#params.isDeleted}) " +
+            "AND (:#{#params.name} IS NULL OR :#{#params.name} = '' OR UPPER(au.name) LIKE UPPER(CONCAT('%', :#{#params.name}, '%'))) " +
+            "AND (:#{#params.minCapacity} IS NULL OR au.capacity >= :#{#params.minCapacity}) " +
+            "AND (:#{#params.maxCapacity} IS NULL OR au.capacity <= :#{#params.maxCapacity}) " +
+            "AND (:#{#params.minArea} IS NULL OR au.area >= :#{#params.minArea}) " +
+            "AND (:#{#params.maxArea} IS NULL OR au.area <= :#{#params.maxArea})")
     Page<AccommodationUnit> findWithFilters(@Param("params") AccommodationUnitSearchParams params, Pageable pageable);
 }

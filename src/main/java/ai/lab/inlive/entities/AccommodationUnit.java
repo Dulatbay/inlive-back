@@ -3,10 +3,12 @@ package ai.lab.inlive.entities;
 import ai.lab.inlive.entities.enums.UnitType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
 import java.util.Set;
 
+@BatchSize(size = 50)
 @Getter
 @Setter
 @Entity
@@ -37,12 +39,15 @@ public class AccommodationUnit extends AbstractEntity<Long> {
     @Column(name = "is_available", nullable = false)
     private Boolean isAvailable = Boolean.TRUE;
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccUnitImages> images = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccUnitDictionary> dictionaries = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "unit", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccUnitTariffs> tariffs = new HashSet<>();
 }

@@ -20,7 +20,7 @@ public class SearchRequestExpirationScheduler {
     @Scheduled(fixedRate = 300000)
     @Transactional
     public void checkAndExpireSearchRequests() {
-        log.debug("Starting search request expiration check...");
+        log.info("Starting search request expiration check...");
 
         List<AccSearchRequest> expiredRequests = accSearchRequestRepository.findExpiredRequests();
 
@@ -29,6 +29,7 @@ public class SearchRequestExpirationScheduler {
 
             for (AccSearchRequest request : expiredRequests) {
                 request.setStatus(SearchRequestStatus.EXPIRED);
+                request.softDelete();
                 log.info("Search request ID {} expired. Was created at: {}, expired at: {}",
                         request.getId(),
                         request.getCreatedAt(),
@@ -38,7 +39,7 @@ public class SearchRequestExpirationScheduler {
             accSearchRequestRepository.saveAll(expiredRequests);
             log.info("Successfully expired {} search requests", expiredRequests.size());
         } else {
-            log.debug("No expired search requests found");
+            log.info("No expired search requests found");
         }
     }
 }

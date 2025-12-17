@@ -1,7 +1,8 @@
 package ai.lab.inlive.security;
 
-import ai.lab.inlive.dto.response.ErrorResponse;
+import ai.lab.inlive.exceptions.handler.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.MessageSource;
@@ -11,10 +12,12 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 public class CustomAccessDeniedHandler implements AccessDeniedHandler {
 
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule());
     private final MessageSource messageSource;
 
     public CustomAccessDeniedHandler(MessageSource messageSource) {
@@ -27,13 +30,16 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
         response.setStatus(HttpStatus.FORBIDDEN.value());
 
         String errorMessage = messageSource.getMessage("error.forbidden", null, LocaleContextHolder.getLocale());
-        String accessDeniedMessage = messageSource.getMessage("error.auth.accessDenied", 
-                new Object[]{request.getRequestURI()}, LocaleContextHolder.getLocale());
+        String accessDeniedMessage = messageSource.getMessage("error.accessDenied", null, LocaleContextHolder.getLocale());
 
-        response.getOutputStream().println(objectMapper.writeValueAsString(
-                new ErrorResponse(errorMessage,
-                        accessDeniedMessage,
-                        ""
-                )));
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(errorMessage)
+                .message(accessDeniedMessage)
+                .validationErrors(null)
+                .build();
+
+        response.getOutputStream().println(objectMapper.writeValueAsString(errorResponse));
     }
 }
