@@ -49,12 +49,18 @@ public class AccommodationUnitController {
     @Operation(summary = "Создать единицу размещения", description = "Создание новой квартиры/номера. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Единица размещения успешно создана"),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или неверный формат файлов"),
-            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
-            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER"),
-            @ApiResponse(responseCode = "404", description = "Размещение или справочник не найден"),
-            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или неверный формат файлов", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Размещение или справочник не найден", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> createUnit(@ModelAttribute @Valid AccommodationUnitCreateRequest request) {
@@ -171,10 +177,14 @@ public class AccommodationUnitController {
                description = "Полная замена фотографий единицы размещения. Все старые фото удаляются из S3 и базы данных, новые загружаются. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Фотографии успешно обновлены"),
-            @ApiResponse(responseCode = "400", description = "Некорректный формат файлов. Разрешены только изображения"),
-            @ApiResponse(responseCode = "404", description = "Единица размещения не найдена"),
-            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3")
+            @ApiResponse(responseCode = "400", description = "Некорректный формат файлов. Разрешены только изображения", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Единица размещения не найдена", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PutMapping(path = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateAccommodationUnitPhotos(

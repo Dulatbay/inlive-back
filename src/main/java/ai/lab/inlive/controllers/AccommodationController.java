@@ -148,10 +148,14 @@ public class AccommodationController {
                description = "Полная замена фотографий размещения. Все старые фото удаляются из S3 и базы данных, новые загружаются. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Фотографии успешно обновлены"),
-            @ApiResponse(responseCode = "400", description = "Некорректный формат файлов. Разрешены только изображения", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Размещение не найдено", content = @Content),
-            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Некорректный формат файлов. Разрешены только изображения", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Размещение не найдено", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PutMapping(path = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateAccommodationPhotos(
