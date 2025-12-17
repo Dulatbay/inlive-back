@@ -478,14 +478,17 @@ public class KeycloakServiceImpl implements KeycloakService {
 
         } catch (HttpClientErrorException e) {
             String msg = e.getResponseBodyAsString();
+            log.warn("Token refresh failed with status {}: {}", e.getStatusCode(), msg);
             if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
-                throw new IllegalArgumentException(messageSource.getMessage("error.auth.refreshFailed.invalidGrant", null, LocaleContextHolder.getLocale()) + ". Body: " + msg);
+                throw new UnauthorizedException(messageSource.getMessage("error.auth.refreshFailed.invalidGrant", null, LocaleContextHolder.getLocale()));
             }
             if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
-                throw new IllegalStateException(messageSource.getMessage("error.auth.refreshFailed.invalidClient", null, LocaleContextHolder.getLocale()) + ". Body: " + msg);
+                throw new UnauthorizedException(messageSource.getMessage("error.auth.refreshFailed.invalidClient", null, LocaleContextHolder.getLocale()));
             }
-            throw e;
+            throw new UnauthorizedException(messageSource.getMessage("error.auth.refreshFailed", 
+                    new Object[]{e.getMessage()}, LocaleContextHolder.getLocale()));
         } catch (Exception e) {
+            log.error("Unexpected error during token refresh", e);
             throw new RuntimeException(messageSource.getMessage("error.auth.refreshFailed", 
                     new Object[]{e.getMessage()}, LocaleContextHolder.getLocale()), e);
         }

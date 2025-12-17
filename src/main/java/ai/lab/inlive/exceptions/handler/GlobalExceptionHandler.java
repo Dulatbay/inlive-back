@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -49,6 +50,41 @@ public class GlobalExceptionHandler {
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
             String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(messageSource.getMessage("error.validationFailed", null, LocaleContextHolder.getLocale()))
+                .message(messageSource.getMessage("error.validationErrors", null, LocaleContextHolder.getLocale()))
+                .validationErrors(errors)
+                .build();
+
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @ExceptionHandler(BindException.class)
+    public ResponseEntity<ErrorResponse> handleBindException(BindException ex) {
+        log.warn("Bind exception: {}", ex.getMessage());
+        
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            
+            if (errorMessage != null && errorMessage.contains("Failed to convert")) {
+                if ("images".equals(fieldName)) {
+                    errorMessage = messageSource.getMessage("error.upload.invalidImagesType", null, LocaleContextHolder.getLocale());
+                } else {
+                    errorMessage = messageSource.getMessage("error.request.typeMismatch", 
+                            new Object[]{fieldName}, LocaleContextHolder.getLocale());
+                }
+            } else if (errorMessage == null) {
+                errorMessage = messageSource.getMessage("error.request.typeMismatch", 
+                        new Object[]{fieldName}, LocaleContextHolder.getLocale());
+            }
+            
             errors.put(fieldName, errorMessage);
         });
 
@@ -134,11 +170,11 @@ public class GlobalExceptionHandler {
         log.warn("File upload size exceeded: {}", ex.getMessage());
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .timestamp(LocalDateTime.now())
-                .status(HttpStatus.BAD_REQUEST.value())
-                .error(messageSource.getMessage("error.badRequest", null, LocaleContextHolder.getLocale()))
+                .status(HttpStatus.PAYLOAD_TOO_LARGE.value())
+                .error(messageSource.getMessage("error.payloadTooLarge", null, LocaleContextHolder.getLocale()))
                 .message(messageSource.getMessage("error.upload.maxSizeExceeded", null, LocaleContextHolder.getLocale()))
                 .build();
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(errorResponse);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -161,5 +197,28 @@ public class GlobalExceptionHandler {
                 .message(message)
                 .build();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException ex) {
+        log.error("Runtime exception: {}", ex.getMessage(), ex);
+        
+        String message = ex.getMessage();
+        
+        if (message != null && message.contains("Keycloak authentication failed")) {
+            message = messageSource.getMessage("error.externalService.authenticationFailed", null, LocaleContextHolder.getLocale());
+        } else if (message != null && message.contains("Failed to retrieve access token")) {
+            message = messageSource.getMessage("error.externalService.unavailable", null, LocaleContextHolder.getLocale());
+        } else {
+            message = messageSource.getMessage("error.internalServerError", null, LocaleContextHolder.getLocale());
+        }
+        
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error(messageSource.getMessage("error.internalServerError", null, LocaleContextHolder.getLocale()))
+                .message(message)
+                .build();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
     }
 }

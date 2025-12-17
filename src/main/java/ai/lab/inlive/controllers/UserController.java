@@ -71,13 +71,14 @@ public class UserController {
     }
 
     @Operation(summary = "Загрузить фото профиля",
-            description = "Загрузка фотографии профиля текущего пользователя. Принимаются только изображения.")
+            description = "Загрузка фотографии профиля текущего пользователя. Принимаются только изображения (JPEG, PNG, JPG). Максимальный размер: 10 МБ.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Фото успешно загружено",
                     content = @Content),
-            @ApiResponse(responseCode = "400", description = "Некорректный файл или формат", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Некорректный формат файла. Разрешены только изображения", content = @Content),
             @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", content = @Content),
             @ApiResponse(responseCode = "404", description = "Пользователь не найден", content = @Content),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ", content = @Content),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
     })
     @PutMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

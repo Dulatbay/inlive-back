@@ -46,13 +46,14 @@ public class AccommodationUnitController {
     private final AccommodationUnitService accommodationUnitService;
 
     @AccessForAdminsAndSuperManagers
-    @Operation(summary = "Создать единицу размещения", description = "Создание новой квартиры/номера")
+    @Operation(summary = "Создать единицу размещения", description = "Создание новой квартиры/номера. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Единица размещения успешно создана"),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса"),
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или неверный формат файлов"),
             @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
             @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER"),
             @ApiResponse(responseCode = "404", description = "Размещение или справочник не найден"),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ"),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -167,11 +168,12 @@ public class AccommodationUnitController {
     }
 
     @Operation(summary = "Обновить фото единицы размещения",
-               description = "Полная замена фотографий единицы размещения. Все старые фото удаляются из S3 и базы данных, новые загружаются.")
+               description = "Полная замена фотографий единицы размещения. Все старые фото удаляются из S3 и базы данных, новые загружаются. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Фотографии успешно обновлены"),
-            @ApiResponse(responseCode = "400", description = "Некорректные файлы или превышен лимит размера"),
+            @ApiResponse(responseCode = "400", description = "Некорректный формат файлов. Разрешены только изображения"),
             @ApiResponse(responseCode = "404", description = "Единица размещения не найдена"),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ"),
             @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3")
     })
     @PutMapping(path = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

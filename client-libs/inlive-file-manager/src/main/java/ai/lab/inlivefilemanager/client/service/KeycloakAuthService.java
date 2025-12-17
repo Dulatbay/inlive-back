@@ -1,14 +1,17 @@
 package ai.lab.inlivefilemanager.client.service;
 
 import ai.lab.inlivefilemanager.client.dto.KeycloakTokenResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.Instant;
 import java.util.Collections;
 
+@Slf4j
 @Service
 public class KeycloakAuthService {
 
@@ -66,16 +69,34 @@ public class KeycloakAuthService {
 
         HttpEntity<String> request = new HttpEntity<>(requestBody.toString(), headers);
 
-        RestTemplate restTemplate = new RestTemplate();
-        ResponseEntity<KeycloakTokenResponse> response = restTemplate.exchange(
-                url, HttpMethod.POST, request, KeycloakTokenResponse.class);
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<KeycloakTokenResponse> response = restTemplate.exchange(
+                    url, HttpMethod.POST, request, KeycloakTokenResponse.class);
 
-        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            this.accessToken = response.getBody().getAccessToken();
-            long expiresIn = response.getBody().getExpiresIn();
-            tokenExpiration = Instant.now().plusSeconds(expiresIn - 30);
-        } else {
-            throw new RuntimeException("Failed to retrieve access token from Keycloak");
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                this.accessToken = response.getBody().getAccessToken();
+                long expiresIn = response.getBody().getExpiresIn();
+                tokenExpiration = Instant.now().plusSeconds(expiresIn - 30);
+                log.debug("Successfully retrieved access token from Keycloak");
+            } else {
+                log.error("Failed to retrieve access token from Keycloak. Status: {}", response.getStatusCode());
+                throw new RuntimeException("Failed to retrieve access token from Keycloak. Status: " + response.getStatusCode());
+            }
+        } catch (HttpClientErrorException e) {
+            log.error("Keycloak authentication failed. Status: {}, Response: {}", 
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            
+            if (e.getStatusCode() == HttpStatus.UNAUTHORIZED) {
+                throw new RuntimeException("Keycloak authentication failed: Invalid credentials for service account (username: " + username + ")", e);
+            } else if (e.getStatusCode() == HttpStatus.BAD_REQUEST) {
+                throw new RuntimeException("Keycloak authentication failed: Bad request. Check configuration (realm: " + realm + ", client_id: " + clientId + ")", e);
+            } else {
+                throw new RuntimeException("Keycloak authentication failed with status: " + e.getStatusCode(), e);
+            }
+        } catch (Exception e) {
+            log.error("Unexpected error while retrieving access token from Keycloak", e);
+            throw new RuntimeException("Failed to retrieve access token from Keycloak: " + e.getMessage(), e);
         }
     }
 }
