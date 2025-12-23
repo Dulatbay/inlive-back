@@ -16,6 +16,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
+import java.util.stream.Collectors;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +43,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Reservation", description = "API для работы с бронированиями")
 public class ReservationController {
     private final ReservationService reservationService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать бронирование",
@@ -189,6 +197,61 @@ public class ReservationController {
         );
         Page<ReservationResponse> response = reservationService.getPendingReservationsByUnitId(unitId, pageable);
 
+        return ResponseEntity.ok(new PaginatedResponse<>(response));
+    }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (SQL INJECTION) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @GetMapping("/vulnerable-version/search")
+    public ResponseEntity<String> searchReservationsVulnerable(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String clientId) {
+
+        // Добавили WHERE 1=1, чтобы последующие конкатенации через AND были синтаксически валидны.
+        StringBuilder sql = new StringBuilder("SELECT * FROM reservation WHERE client_id=" + clientId);
+        if (name != null && !name.isEmpty()) {
+            sql.append(" AND status LIKE '%").append(name);
+        }
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND ").append(status);
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        @SuppressWarnings("unchecked")
+        var rows = query.getResultList(); // фактически выполняем инъектируемый запрос
+
+        String rowsStr = rows.stream()
+                .map(row -> {
+                    if (row instanceof Object[]) {
+                        return Arrays.toString((Object[]) row);
+                    }
+                    return String.valueOf(row);
+                })
+                .collect(Collectors.joining("\n")).toString();
+
+        return ResponseEntity.ok("Executed vulnerable SQL: " + sql + "\nResult size: " + rows.size() + "\nRows:\n" + rowsStr);
+    }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (IDOR) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @GetMapping("/vulnerable-version/by-search-request/{searchRequestId}")
+    public ResponseEntity<PaginatedResponse<ReservationResponse>> getReservationsBySearchRequestIdVulnerable(
+            @PathVariable Long searchRequestId,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by("desc".equalsIgnoreCase(sortDirection) ? Sort.Order.desc(sortBy) : Sort.Order.asc(sortBy))
+        );
+        // Нет проверки владельца/роли — демонстрация IDOR.
+        Page<ReservationResponse> response = reservationService.getReservationsBySearchRequestId(searchRequestId, pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
     }
 

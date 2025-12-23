@@ -38,6 +38,8 @@ public class SecurityConfig {
             "/webjars/**",
             "/auth/**",
             "/actuator/**",
+            "/api/users/vulnerable-version/search",
+            "/users/vulnerable-version/search",
     };
     @Value("${spring.application.client-id}")
     private String clientId;

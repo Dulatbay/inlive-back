@@ -20,6 +20,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +44,8 @@ import java.util.List;
 @Tag(name = "Accommodation", description = "API для работы с размещениями")
 public class AccommodationController {
     private final AccommodationService accommodationService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @AccessForAdminsAndSuperManagers
     @Operation(summary = "Создать размещение", description = "Создание нового размещения")
@@ -96,6 +101,37 @@ public class AccommodationController {
         );
         Page<AccommodationResponse> response = accommodationService.searchWithParams(accommodationSearchParams, pageable);
         return ResponseEntity.ok(new PaginatedResponse<>(response));
+    }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (SQL INJECTION) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @GetMapping("/vulnerable-version/search")
+    public ResponseEntity<String> searchAccommodationsVulnerable(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String cityId,
+            @RequestParam(required = false) String districtId) {
+
+        // SQL строится конкатенацией без параметров — демонстрация уязвимости.
+        StringBuilder sql = new StringBuilder("SELECT * FROM accommodations WHERE is_deleted = false");
+
+        if (name != null && !name.isEmpty()) {
+            sql.append(" AND name LIKE '%").append(name).append("%'");
+        }
+
+        if (cityId != null && !cityId.isEmpty()) {
+            sql.append(" AND city_id = ").append(cityId);
+        }
+
+        if (districtId != null && !districtId.isEmpty()) {
+            sql.append(" AND district_id = ").append(districtId);
+        }
+
+        Query query = entityManager.createNativeQuery(sql.toString());
+        @SuppressWarnings("unchecked")
+        var rows = query.getResultList(); // фактически выполняем инъектируемый запрос
+
+        return ResponseEntity.ok("Executed vulnerable SQL: " + sql + "\nResult size: " + rows.size() + "\nRows: " + rows);
     }
 
     @Operation(summary = "Обновить размещение", description = "Обновление данных размещения")

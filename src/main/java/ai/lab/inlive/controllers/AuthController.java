@@ -98,4 +98,17 @@ public class AuthController {
         keycloakService.logout(request, response);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (BROKEN AUTH) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @GetMapping("/vulnerable-version/validate")
+    public ResponseEntity<String> validateTokenVulnerable(@RequestParam(required = false) String token) {
+        // Принимаем любой непустой токен без проверки подписи/срока — демонстрация уязвимости.
+        if (token == null || token.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token is missing");
+        }
+        return ResponseEntity.ok("Token validated (vulnerable endpoint)");
+    }
+
 }

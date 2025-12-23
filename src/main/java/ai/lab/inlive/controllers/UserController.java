@@ -3,6 +3,8 @@ package ai.lab.inlive.controllers;
 import ai.lab.inlive.constants.Utils;
 import ai.lab.inlive.dto.request.UpdateUserProfileRequest;
 import ai.lab.inlive.dto.response.UserResponse;
+import ai.lab.inlive.entities.User;
+import ai.lab.inlive.repositories.UserRepository;
 import ai.lab.inlive.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,6 +22,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -29,6 +34,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @Operation(summary = "Получить информацию о текущем пользователе",
             description = "Получение профиля текущего авторизованного пользователя")
@@ -102,6 +108,72 @@ public class UserController {
 
         userService.deleteUserPhoto(keycloakId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (XSS) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @GetMapping("/vulnerable-version/search")
+    public ResponseEntity<String> searchUsersVulnerable(@RequestParam String q) {
+        // Возврат необработанного ввода пользователя — демонстрация XSS.
+        String html = "<html><head><title>Search Results</title></head><body>" +
+                "<h1>Search results for: " + q + "</h1>" +
+                "<p>Your search query was: " + q + "</p>" +
+                "</body></html>";
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/html; charset=UTF-8")
+                .body(html);
+    }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (IDOR) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @PutMapping(value = "/vulnerable-version/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> updateUserProfileVulnerable(
+            @PathVariable Long userId,
+            @RequestBody Map<String, Object> request) {
+        return updateUserProfileVulnerableInternal(userId, request);
+    }
+
+    @Transactional
+    protected ResponseEntity<String> updateUserProfileVulnerableInternal(Long userId, Map<String, Object> request) {
+        // Нет проверки принадлежности ресурса — демонстрация IDOR + реальное изменение.
+        log.info("VULNERABLE updateUserProfile called for userId={}, body={}", userId, request);
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        }
+
+        if (request.containsKey("email")) {
+            user.setEmail(String.valueOf(request.get("email")));
+        }
+        if (request.containsKey("firstName")) {
+            user.setFirstName(String.valueOf(request.get("firstName")));
+        }
+        if (request.containsKey("lastName")) {
+            user.setLastName(String.valueOf(request.get("lastName")));
+        }
+        // Дополнительно позволяем менять phoneNumber для демонстрации
+        if (request.containsKey("phoneNumber")) {
+            user.setPhoneNumber(String.valueOf(request.get("phoneNumber")));
+        }
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Vulnerable update applied for userId=" + userId + " payload=" + request);
+    }
+
+    /**
+     * УМЫШЛЕННО УЯЗВИМЫЙ ЭНДПОИНТ (FILE UPLOAD) ДЛЯ УЧЕБНЫХ ЦЕЛЕЙ.
+     */
+    @PutMapping(value = "/vulnerable-version/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadFileVulnerable(@RequestParam("file") MultipartFile file) {
+        // Отсутствуют проверки типа, размера и имени файла — демонстрация RCE/Traversal.
+        String filename = file.getOriginalFilename();
+        log.info("VULNERABLE uploadFile called with filename={}", filename);
+        return ResponseEntity.ok("Uploaded vulnerable file: " + filename);
     }
 }
 
