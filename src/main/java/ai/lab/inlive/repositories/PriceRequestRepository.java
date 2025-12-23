@@ -12,15 +12,27 @@ import java.util.Optional;
 
 @Repository
 public interface PriceRequestRepository extends JpaRepository<PriceRequest, Long> {
+    
+    @Query("SELECT DISTINCT pr FROM PriceRequest pr " +
+           "LEFT JOIN FETCH pr.unit u " +
+           "LEFT JOIN FETCH u.accommodation " +
+           "LEFT JOIN FETCH pr.searchRequest " +
+           "WHERE pr.id = :id AND pr.isDeleted = false")
     Optional<PriceRequest> findByIdAndIsDeletedFalse(Long id);
 
-    @Query("SELECT pr FROM PriceRequest pr " +
+    @Query("SELECT DISTINCT pr FROM PriceRequest pr " +
+           "LEFT JOIN FETCH pr.unit u " +
+           "LEFT JOIN FETCH u.accommodation " +
+           "LEFT JOIN FETCH pr.searchRequest " +
            "WHERE pr.unit.id = :unitId " +
            "AND pr.isDeleted = false " +
            "ORDER BY pr.createdAt DESC")
     Page<PriceRequest> findActiveByUnitId(@Param("unitId") Long unitId, Pageable pageable);
 
-    @Query("SELECT pr FROM PriceRequest pr " +
+    @Query("SELECT DISTINCT pr FROM PriceRequest pr " +
+           "LEFT JOIN FETCH pr.unit u " +
+           "LEFT JOIN FETCH u.accommodation " +
+           "LEFT JOIN FETCH pr.searchRequest " +
            "WHERE pr.searchRequest.id = :searchRequestId " +
            "AND pr.isDeleted = false " +
            "ORDER BY pr.createdAt DESC")

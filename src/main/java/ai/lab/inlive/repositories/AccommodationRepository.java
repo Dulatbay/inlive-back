@@ -14,69 +14,41 @@ import java.util.Optional;
 @Repository
 public interface AccommodationRepository extends JpaRepository<Accommodation, Long> {
 
+    @Query("SELECT DISTINCT a FROM Accommodation a " +
+            "LEFT JOIN FETCH a.city " +
+            "LEFT JOIN FETCH a.district " +
+            "LEFT JOIN FETCH a.ownerId " +
+            "LEFT JOIN FETCH a.approvedBy " +
+            "LEFT JOIN FETCH a.dictionaries d " +
+            "LEFT JOIN FETCH d.dictionary " +
+            "LEFT JOIN FETCH a.images " +
+            "WHERE a.id = :id AND a.isDeleted = false")
     Optional<Accommodation> findByIdAndIsDeletedFalse(Long id);
 
-    @Query(value = """
-            SELECT a.*
-            FROM accommodations a
-            LEFT JOIN users u ON a.owner_id = u.id
-            LEFT JOIN districts d ON a.district_id = d.id
-            LEFT JOIN cities c ON a.city_id = c.id
-            WHERE (CAST(:#{#params.cityId} AS BIGINT) IS NULL OR c.id = CAST(:#{#params.cityId} AS BIGINT))
-              AND (CAST(:#{#params.districtId} AS BIGINT) IS NULL OR d.id = CAST(:#{#params.districtId} AS BIGINT))
-              AND (CAST(:#{#params.approved} AS BOOLEAN) IS NULL OR a.is_approved = CAST(:#{#params.approved} AS BOOLEAN))
-              AND (CAST(:#{#params.ownerId} AS BIGINT) IS NULL OR u.id = CAST(:#{#params.ownerId} AS BIGINT))
-              AND (CAST(:#{#params.minRating} AS DOUBLE PRECISION) IS NULL OR a.rating >= CAST(:#{#params.minRating} AS DOUBLE PRECISION))
-              AND (CAST(:#{#params.isDeleted} AS BOOLEAN) IS NULL OR a.is_deleted = CAST(:#{#params.isDeleted} AS BOOLEAN))
-              AND (CAST(:#{#params.name} AS VARCHAR) IS NULL OR UPPER(a.name) LIKE UPPER(CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')))
-            """,
-            countQuery = """
-            SELECT COUNT(*)
-            FROM accommodations a
-            LEFT JOIN users u ON a.owner_id = u.id
-            LEFT JOIN districts d ON a.district_id = d.id
-            LEFT JOIN cities c ON a.city_id = c.id
-            WHERE (CAST(:#{#params.cityId} AS BIGINT) IS NULL OR c.id = CAST(:#{#params.cityId} AS BIGINT))
-              AND (CAST(:#{#params.districtId} AS BIGINT) IS NULL OR d.id = CAST(:#{#params.districtId} AS BIGINT))
-              AND (CAST(:#{#params.approved} AS BOOLEAN) IS NULL OR a.is_approved = CAST(:#{#params.approved} AS BOOLEAN))
-              AND (CAST(:#{#params.ownerId} AS BIGINT) IS NULL OR u.id = CAST(:#{#params.ownerId} AS BIGINT))
-              AND (CAST(:#{#params.minRating} AS DOUBLE PRECISION) IS NULL OR a.rating >= CAST(:#{#params.minRating} AS DOUBLE PRECISION))
-              AND (CAST(:#{#params.isDeleted} AS BOOLEAN) IS NULL OR a.is_deleted = CAST(:#{#params.isDeleted} AS BOOLEAN))
-              AND (CAST(:#{#params.name} AS VARCHAR) IS NULL OR UPPER(a.name) LIKE UPPER(CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')))
-            """,
-            nativeQuery = true)
+    @Query("SELECT DISTINCT a FROM Accommodation a " +
+            "LEFT JOIN FETCH a.city " +
+            "LEFT JOIN FETCH a.district " +
+            "LEFT JOIN FETCH a.ownerId " +
+            "LEFT JOIN FETCH a.approvedBy " +
+            "WHERE (:#{#params.cityId} IS NULL OR a.city.id = :#{#params.cityId}) " +
+            "AND (:#{#params.districtId} IS NULL OR a.district.id = :#{#params.districtId}) " +
+            "AND (:#{#params.approved} IS NULL OR a.approved = :#{#params.approved}) " +
+            "AND (:#{#params.minRating} IS NULL OR a.rating >= :#{#params.minRating}) " +
+            "AND (:#{#params.isDeleted} IS NULL OR a.isDeleted = :#{#params.isDeleted}) " +
+            "AND (:#{#params.name} IS NULL OR :#{#params.name} = '' OR UPPER(a.name) LIKE UPPER(CONCAT('%', :#{#params.name}, '%')))")
     Page<Accommodation> findWithFilters(@Param("params") AccommodationSearchParams params, Pageable pageable);
 
-    @Query(value = """
-            SELECT a.*
-            FROM accommodations a
-            LEFT JOIN users u ON a.owner_id = u.id
-            LEFT JOIN districts d ON a.district_id = d.id
-            LEFT JOIN cities c ON a.city_id = c.id
-            WHERE (CAST(:#{#params.cityId} AS BIGINT) IS NULL OR c.id = CAST(:#{#params.cityId} AS BIGINT))
-              AND (CAST(:#{#params.districtId} AS BIGINT) IS NULL OR d.id = CAST(:#{#params.districtId} AS BIGINT))
-              AND (CAST(:#{#params.approved} AS BOOLEAN) IS NULL OR a.is_approved = CAST(:#{#params.approved} AS BOOLEAN))
-              AND (CAST(:#{#params.ownerId} AS BIGINT) IS NULL OR u.id = CAST(:#{#params.ownerId} AS BIGINT))
-              AND (CAST(:#{#params.minRating} AS DOUBLE PRECISION) IS NULL OR a.rating >= CAST(:#{#params.minRating} AS DOUBLE PRECISION))
-              AND (CAST(:#{#params.isDeleted} AS BOOLEAN) IS NULL OR a.is_deleted = CAST(:#{#params.isDeleted} AS BOOLEAN))
-              AND (CAST(:#{#params.name} AS VARCHAR) IS NULL OR UPPER(a.name) LIKE UPPER(CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')))
-            AND a.owner_id = CAST(:ownerId AS BIGINT)
-            """,
-            countQuery = """
-            SELECT COUNT(*)
-            FROM accommodations a
-            LEFT JOIN users u ON a.owner_id = u.id
-            LEFT JOIN districts d ON a.district_id = d.id
-            LEFT JOIN cities c ON a.city_id = c.id
-            WHERE (CAST(:#{#params.cityId} AS BIGINT) IS NULL OR c.id = CAST(:#{#params.cityId} AS BIGINT))
-              AND (CAST(:#{#params.districtId} AS BIGINT) IS NULL OR d.id = CAST(:#{#params.districtId} AS BIGINT))
-              AND (CAST(:#{#params.approved} AS BOOLEAN) IS NULL OR a.is_approved = CAST(:#{#params.approved} AS BOOLEAN))
-              AND (CAST(:#{#params.ownerId} AS BIGINT) IS NULL OR u.id = CAST(:#{#params.ownerId} AS BIGINT))
-              AND (CAST(:#{#params.minRating} AS DOUBLE PRECISION) IS NULL OR a.rating >= CAST(:#{#params.minRating} AS DOUBLE PRECISION))
-              AND (CAST(:#{#params.isDeleted} AS BOOLEAN) IS NULL OR a.is_deleted = CAST(:#{#params.isDeleted} AS BOOLEAN))
-              AND (CAST(:#{#params.name} AS VARCHAR) IS NULL OR UPPER(a.name) LIKE UPPER(CONCAT('%', CAST(:#{#params.name} AS VARCHAR), '%')))
-            AND a.owner_id = CAST(:ownerId AS BIGINT)
-            """,
-            nativeQuery = true)
+    @Query("SELECT DISTINCT a FROM Accommodation a " +
+            "LEFT JOIN FETCH a.city " +
+            "LEFT JOIN FETCH a.district " +
+            "LEFT JOIN FETCH a.ownerId " +
+            "LEFT JOIN FETCH a.approvedBy " +
+            "WHERE a.ownerId.id = :ownerId " +
+            "AND (:#{#params.cityId} IS NULL OR a.city.id = :#{#params.cityId}) " +
+            "AND (:#{#params.districtId} IS NULL OR a.district.id = :#{#params.districtId}) " +
+            "AND (:#{#params.approved} IS NULL OR a.approved = :#{#params.approved}) " +
+            "AND (:#{#params.minRating} IS NULL OR a.rating >= :#{#params.minRating}) " +
+            "AND (:#{#params.isDeleted} IS NULL OR a.isDeleted = :#{#params.isDeleted}) " +
+            "AND (:#{#params.name} IS NULL OR :#{#params.name} = '' OR UPPER(a.name) LIKE UPPER(CONCAT('%', :#{#params.name}, '%')))")
     Page<Accommodation> findByOwnerIdWithFilters(@Param("ownerId") Long ownerId, @Param("params") AccommodationSearchParams params, Pageable pageable);
 }

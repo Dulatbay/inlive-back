@@ -4,6 +4,7 @@ import ai.lab.inlive.constants.Utils;
 import ai.lab.inlive.dto.request.UpdateUserProfileRequest;
 import ai.lab.inlive.dto.response.UserResponse;
 import ai.lab.inlive.services.UserService;
+import ai.lab.inlive.validators.ValidFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,10 +19,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users")
@@ -68,17 +71,22 @@ public class UserController {
     }
 
     @Operation(summary = "Загрузить фото профиля",
-            description = "Загрузка фотографии профиля текущего пользователя. Принимаются только изображения.")
+            description = "Загрузка фотографии профиля текущего пользователя. Принимаются только изображения (JPEG, PNG, JPG). Максимальный размер: 10 МБ.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Фото успешно загружено",
-                    content = @Content),
-            @ApiResponse(responseCode = "400", description = "Некорректный файл или формат", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", content = @Content),
-            @ApiResponse(responseCode = "404", description = "Пользователь не найден", content = @Content),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", content = @Content)
+            @ApiResponse(responseCode = "200", description = "Фото успешно загружено"),
+            @ApiResponse(responseCode = "400", description = "Некорректный формат файла. Разрешены только изображения", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Пользователь не найден", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PutMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> uploadPhoto(@RequestParam("photo") MultipartFile photo) {
+    public ResponseEntity<Void> uploadPhoto(@ValidFile @RequestParam("photo") MultipartFile photo) {
         var token = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
         var keycloakId = Utils.extractIdFromToken(token);
 

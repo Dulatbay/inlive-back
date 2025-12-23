@@ -1,6 +1,7 @@
 package ai.lab.inlive.dto.request;
 
 import ai.lab.inlive.entities.enums.UnitType;
+import ai.lab.inlive.validators.ValidFiles;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,5 +39,6 @@ public class AccommodationUnitCreateRequest {
 
     private List<Long> conditionDictionaryIds;
 
+    @ValidFiles
     private List<MultipartFile> images;
 }

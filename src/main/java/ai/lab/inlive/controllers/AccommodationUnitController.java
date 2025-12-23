@@ -12,6 +12,7 @@ import ai.lab.inlive.dto.response.PriceRequestResponse;
 import ai.lab.inlive.dto.response.ReservationResponse;
 import ai.lab.inlive.security.authorization.AccessForAdminsAndSuperManagers;
 import ai.lab.inlive.services.AccommodationUnitService;
+import ai.lab.inlive.validators.ValidFiles;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -22,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 
 @Slf4j
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/accommodation-units")
@@ -43,14 +46,21 @@ public class AccommodationUnitController {
     private final AccommodationUnitService accommodationUnitService;
 
     @AccessForAdminsAndSuperManagers
-    @Operation(summary = "Создать единицу размещения", description = "Создание новой квартиры/номера")
+    @Operation(summary = "Создать единицу размещения", description = "Создание новой квартиры/номера. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Единица размещения успешно создана"),
-            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса"),
-            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован"),
-            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER"),
-            @ApiResponse(responseCode = "404", description = "Размещение или справочник не найден"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера")
+            @ApiResponse(responseCode = "400", description = "Некорректные данные запроса или неверный формат файлов", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Пользователь не авторизован", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "Доступ запрещен - требуется роль ADMIN или SUPER_MANAGER", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Размещение или справочник не найден", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> createUnit(@ModelAttribute @Valid AccommodationUnitCreateRequest request) {
@@ -164,18 +174,23 @@ public class AccommodationUnitController {
     }
 
     @Operation(summary = "Обновить фото единицы размещения",
-               description = "Полная замена фотографий единицы размещения. Все старые фото удаляются из S3 и базы данных, новые загружаются.")
+               description = "Полная замена фотографий единицы размещения. Все старые фото удаляются из S3 и базы данных, новые загружаются. Изображения: только JPEG, PNG, JPG. Максимальный размер файла: 10 МБ, запроса: 50 МБ")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Фотографии успешно обновлены"),
-            @ApiResponse(responseCode = "400", description = "Некорректные файлы или превышен лимит размера"),
-            @ApiResponse(responseCode = "404", description = "Единица размещения не найдена"),
-            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3")
+            @ApiResponse(responseCode = "400", description = "Некорректный формат файлов. Разрешены только изображения", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Единица размещения не найдена", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "413", description = "Размер файла превышает 10 МБ или общий размер запроса превышает 50 МБ", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class))),
+            @ApiResponse(responseCode = "500", description = "Внутренняя ошибка сервера или ошибка загрузки в S3", 
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = ai.lab.inlive.exceptions.handler.ErrorResponse.class)))
     })
     @PutMapping(path = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> updateAccommodationUnitPhotos(
             @Parameter(description = "ID единицы размещения", example = "1")
             @PathVariable Long id,
-            @RequestPart("images") List<MultipartFile> images) {
+            @ValidFiles @RequestPart("images") List<MultipartFile> images) {
         accommodationUnitService.updateAccommodationUnitPhotos(id, images);
         return ResponseEntity.ok().build();
     }

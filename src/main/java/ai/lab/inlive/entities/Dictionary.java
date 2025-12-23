@@ -3,7 +3,9 @@ package ai.lab.inlive.entities;
 import ai.lab.inlive.entities.enums.DictionaryKey;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
+@BatchSize(size = 50)
 @Getter
 @Setter
 @Entity

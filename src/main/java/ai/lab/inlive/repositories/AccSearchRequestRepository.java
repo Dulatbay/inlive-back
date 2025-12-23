@@ -14,9 +14,33 @@ import java.util.Optional;
 @Repository
 public interface AccSearchRequestRepository extends JpaRepository<AccSearchRequest, Long> {
 
+    @Query("SELECT DISTINCT asr FROM AccSearchRequest asr " +
+            "LEFT JOIN FETCH asr.author " +
+            "LEFT JOIN FETCH asr.unitTypes ut " +
+            "LEFT JOIN FETCH asr.districts d " +
+            "LEFT JOIN FETCH d.district " +
+            "LEFT JOIN FETCH asr.dictionaries dict " +
+            "LEFT JOIN FETCH dict.dictionary " +
+            "WHERE asr.id = :id AND asr.isDeleted = false")
     Optional<AccSearchRequest> findByIdAndIsDeletedFalse(Long id);
 
+    @Query("SELECT DISTINCT asr FROM AccSearchRequest asr " +
+            "LEFT JOIN FETCH asr.author " +
+            "WHERE asr.author.id = :id AND asr.isDeleted = false")
     Page<AccSearchRequest> findAllByAuthor_IdAndIsDeletedFalse(Long id, Pageable pageable);
+
+    @Query("""
+            SELECT DISTINCT asr FROM AccSearchRequest asr
+            LEFT JOIN FETCH asr.author
+            LEFT JOIN FETCH asr.unitTypes ut
+            LEFT JOIN FETCH asr.districts d
+            LEFT JOIN FETCH d.district dist
+            LEFT JOIN FETCH asr.dictionaries dict
+            LEFT JOIN FETCH dict.dictionary
+            WHERE asr.id IN :ids
+            ORDER BY asr.id DESC
+            """)
+    List<AccSearchRequest> findAllByIdInWithFetchJoin(@Param("ids") List<Long> ids);
 
     @Query(value = """
             SELECT asr.*

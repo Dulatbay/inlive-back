@@ -4,11 +4,13 @@ import ai.lab.inlive.config.converters.LocalDateTimeAttributeConverter;
 import ai.lab.inlive.entities.enums.SearchRequestStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+@BatchSize(size = 50)
 @Getter
 @Setter
 @Entity
@@ -48,12 +50,15 @@ public class AccSearchRequest extends AbstractEntity<Long> {
     @Convert(converter = LocalDateTimeAttributeConverter.class)
     private LocalDateTime expiresAt;
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccSearchRequestUnitType> unitTypes = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccSearchRequestDictionary> dictionaries = new HashSet<>();
 
+    @BatchSize(size = 50)
     @OneToMany(mappedBy = "searchRequest", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AccSearchRequestDistrict> districts = new HashSet<>();
 }

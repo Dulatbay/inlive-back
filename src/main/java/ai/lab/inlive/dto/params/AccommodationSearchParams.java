@@ -14,9 +14,6 @@ public class AccommodationSearchParams {
     @Parameter(description = "Статус одобрения")
     private Boolean approved;
 
-    @Parameter(description = "ID владельца")
-    private Long ownerId;
-
     @Parameter(description = "Минимальный рейтинг")
     private Double minRating;
 
