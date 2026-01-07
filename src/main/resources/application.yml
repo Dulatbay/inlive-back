@@ -1,16 +1,16 @@
 spring:
   application:
     name: inlive
-    keycloak-url: ${KEYCLOAK_URL:http://63.178.189.113:8182}
-    realm: master
+    keycloak-url: ${KEYCLOAK_URL}
+    realm: ${KEYCLOAK_REALM}
     client-id: inlive
-    client-secret: ${KEYCLOAK_CLIENT_SECRET:Mr8VAhWIavIdsTpPSL48xP9o8m907BRL}
-    username: ${KEYCLOAK_ADMIN:inlive-admin}
-    password: ${KEYCLOAK_ADMIN_PASSWORD:inlive-admin}
+    client-secret: ${KEYCLOAK_CLIENT_SECRET}
+    username: ${KEYCLOAK_ADMIN}
+    password: ${KEYCLOAK_ADMIN_PASSWORD}
     send-email: false
     file-api:
       name: file-api
-      url: ${FILE_API_URL:http://localhost:8888}
+      url: ${FILE_API_URL}
 
   servlet:
     multipart:
@@ -19,9 +19,9 @@ spring:
       enabled: true
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_ADDRESS:localhost}:${POSTGRES_ADDRESS_PORT:5434}/${POSTGRES_DB_NAME:inlive}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
+    url: jdbc:postgresql://${POSTGRES_ADDRESS}:${POSTGRES_ADDRESS_PORT}/${POSTGRES_DB_NAME}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
