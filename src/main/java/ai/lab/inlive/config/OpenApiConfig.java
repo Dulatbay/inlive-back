@@ -40,7 +40,7 @@ import java.util.List;
                 ),
                 @Server(
                         description = "PROD ENV",
-                        url = "http://63.178.189.113:8888/api"
+                        url = "http://94.131.85.250/api"
                 )
         },
         security = {
