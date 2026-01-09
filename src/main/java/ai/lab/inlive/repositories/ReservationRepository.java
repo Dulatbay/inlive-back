@@ -19,6 +19,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "LEFT JOIN FETCH u.accommodation acc " +
             "LEFT JOIN FETCH acc.city " +
             "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH acc.ownerId " +
             "LEFT JOIN FETCH r.approvedBy " +
             "LEFT JOIN FETCH r.priceRequest " +
             "LEFT JOIN FETCH r.searchRequest " +
@@ -30,6 +31,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "LEFT JOIN FETCH u.accommodation acc " +
             "LEFT JOIN FETCH acc.city " +
             "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH acc.ownerId " +
             "LEFT JOIN FETCH r.approvedBy " +
             "LEFT JOIN FETCH r.priceRequest " +
             "LEFT JOIN FETCH r.searchRequest " +
@@ -43,6 +45,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "LEFT JOIN FETCH u.accommodation acc " +
             "LEFT JOIN FETCH acc.city " +
             "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH acc.ownerId " +
             "LEFT JOIN FETCH r.approvedBy " +
             "LEFT JOIN FETCH r.priceRequest " +
             "LEFT JOIN FETCH r.searchRequest " +
@@ -56,6 +59,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "LEFT JOIN FETCH u.accommodation acc " +
             "LEFT JOIN FETCH acc.city " +
             "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH acc.ownerId " +
             "LEFT JOIN FETCH r.approvedBy " +
             "LEFT JOIN FETCH r.priceRequest " +
             "LEFT JOIN FETCH r.searchRequest " +
@@ -70,6 +74,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "LEFT JOIN FETCH u.accommodation acc " +
             "LEFT JOIN FETCH acc.city " +
             "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH acc.ownerId " +
             "LEFT JOIN FETCH r.approvedBy " +
             "LEFT JOIN FETCH r.priceRequest " +
             "LEFT JOIN FETCH r.searchRequest " +
@@ -97,6 +102,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "LEFT JOIN FETCH u.accommodation acc " +
             "LEFT JOIN FETCH acc.city " +
             "LEFT JOIN FETCH acc.district " +
+            "LEFT JOIN FETCH acc.ownerId " +
             "LEFT JOIN FETCH r.approvedBy " +
             "LEFT JOIN FETCH r.priceRequest " +
             "LEFT JOIN FETCH r.searchRequest " +

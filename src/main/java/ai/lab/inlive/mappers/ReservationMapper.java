@@ -24,6 +24,7 @@ public interface ReservationMapper {
     @Mapping(target = "checkInDate", source = "searchRequest.fromDate")
     @Mapping(target = "checkOutDate", source = "searchRequest.toDate")
     @Mapping(target = "guestCount", source = "searchRequest.countOfPeople")
+    @Mapping(target = "managerPhoneNumber", expression = "java(getManagerPhoneNumber(reservation))")
     ReservationResponse toDto(Reservation reservation);
 
     default String getClientName(Reservation reservation) {
@@ -33,6 +34,16 @@ public interface ReservationMapper {
             return client.getFirstName() + " " + client.getLastName();
         }
         return client.getUsername();
+    }
+
+    default String getManagerPhoneNumber(Reservation reservation) {
+        if (reservation.getUnit() == null || 
+            reservation.getUnit().getAccommodation() == null ||
+            reservation.getUnit().getAccommodation().getOwnerId() == null) {
+            return null;
+        }
+        User manager = reservation.getUnit().getAccommodation().getOwnerId();
+        return manager.getPhoneNumber();
     }
 }
 

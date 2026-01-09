@@ -64,5 +64,8 @@ public class ReservationResponse {
 
     @Schema(description = "Количество гостей", example = "2")
     private Integer guestCount;
+
+    @Schema(description = "Номер телефона менеджера по размещению", example = "+77001234567")
+    private String managerPhoneNumber;
 }
 
