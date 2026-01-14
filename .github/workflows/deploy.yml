@@ -38,11 +38,11 @@ jobs:
             
 
             echo "Stopping and removing old containers..."
-            docker-compose stop inlive-back
-            docker-compose rm -f inlive-back
+            docker compose stop inlive-back
+            docker compose rm -f inlive-back
             
             echo "Starting up containers with Docker Compose..."
-            docker-compose up -d inlive-back
+            docker compose up -d inlive-back
             
             echo "Cleaning up unused Docker images..."
             docker image prune -af  
