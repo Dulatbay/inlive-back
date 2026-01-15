@@ -40,7 +40,7 @@ import java.util.List;
                 ),
                 @Server(
                         description = "PROD ENV",
-                        url = "http://ui-tap.com/api"
+                        url = "https://ui-tap.com/api"
                 )
         },
         security = {
