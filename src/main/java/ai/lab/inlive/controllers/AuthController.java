@@ -2,6 +2,7 @@ package ai.lab.inlive.controllers;
 
 import ai.lab.inlive.dto.request.UserAuthRequest;
 import ai.lab.inlive.dto.response.AuthResponse;
+import ai.lab.inlive.exceptions.BadRequestException;
 import ai.lab.inlive.security.keycloak.KeycloakBaseUser;
 import ai.lab.inlive.security.keycloak.KeycloakRole;
 import ai.lab.inlive.services.KeycloakService;

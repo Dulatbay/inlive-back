@@ -1,5 +1,6 @@
 package ai.lab.inlive.exceptions.handler;
 
+import ai.lab.inlive.exceptions.BadRequestException;
 import ai.lab.inlive.exceptions.DbObjectNotFoundException;
 import ai.lab.inlive.exceptions.ForbiddenException;
 import ai.lab.inlive.exceptions.UnauthorizedException;
@@ -31,6 +32,18 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
     private final MessageSource messageSource;
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex) {
+        log.warn("Bad request exception: {}", ex.getMessage());
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(messageSource.getMessage("error.badRequest", null, LocaleContextHolder.getLocale()))
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
