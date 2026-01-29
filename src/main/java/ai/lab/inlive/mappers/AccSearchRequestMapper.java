@@ -63,7 +63,10 @@ public interface AccSearchRequestMapper {
             return List.of();
         }
         return request.getDictionaries().stream()
-                .filter(rd -> rd.getDictionary() != null && rd.getDictionary().getKey() == key)
+                .filter(rd -> rd.getDictionary() != null 
+                        && !rd.getIsDeleted() 
+                        && !rd.getDictionary().getIsDeleted() 
+                        && rd.getDictionary().getKey() == key)
                 .map(rd -> dictionaryToDto(rd.getDictionary()))
                 .collect(Collectors.toList());
     }
