@@ -62,7 +62,10 @@ public interface AccommodationUnitMapper {
             return Set.of();
         }
         return unit.getDictionaries().stream()
-                .filter(ud -> ud.getDictionary() != null && ud.getDictionary().getKey() == key)
+                .filter(ud -> ud.getDictionary() != null 
+                        && !ud.getIsDeleted() 
+                        && !ud.getDictionary().getIsDeleted() 
+                        && ud.getDictionary().getKey() == key)
                 .map(ud -> dictionaryToDto(ud.getDictionary()))
                 .collect(Collectors.toSet());
     }
